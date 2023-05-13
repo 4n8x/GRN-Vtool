@@ -1,0 +1,13 @@
+name: grn-vtool
+title: grn-vtool
+username:
+account: grn-vtool
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9086125
+bundleId: 7212779
+url: https://grn-vtool.shinyapps.io/grn-vtool/
+when: 1683956974.8867
+lastSyncTime: 1683956974.88673
+asMultiple: FALSE
+asStatic: FALSE
