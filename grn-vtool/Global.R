@@ -18,6 +18,8 @@ library(rsconnect)
 library(htmltools)
 library(RSQLite)
 library(digest) # Load the digest package
+library(shinyjs)
+
 
 
 
