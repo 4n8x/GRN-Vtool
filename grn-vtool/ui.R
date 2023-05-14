@@ -21,6 +21,9 @@ dashboardPage(
   
   # Define the sidebar
   dashboardSidebar(
+    
+    # Use shinyjs to hide/show UI elements dynamically
+    useShinyjs(),
     # Sidebar menu
     sidebarMenu(
       # Home menu item
@@ -134,27 +137,39 @@ Join us on this exciting journey as we provide you with the tools you need to un
       ,
       
       
-      tabItem(tabName = "Log_in",
+      tabItem(tabName = "Log_in",  ##changed name here
               h2("Log in"),
-              # Create a form to input login credentials
-              sidebarLayout(
-                sidebarPanel(
-                  textInput("username", "Username"),
-                  passwordInput("password", "Password"),
-                  actionButton("login", "Login")
-                ),
-                # Create a panel to display registration form
-                mainPanel(
-                  h4("Register:"),
-                  textInput("new_username", "New Username"),
-                  passwordInput("new_password", "New Password"),
-                  actionButton("register", "Register")
+              
+               
+              div(id = "login_button", 
+                
+                textInput("username", "Username"),
+                passwordInput("password", "Password"),
+                br(),
+                actionButton("login", "Log In") ),
+                
+                
+             
+                    br(),
+                      
+                    div(id = "register_button",
+                    tags$p("Don't have an account? Register below."), 
+                          
+                    textInput("new_username", "New Username"),
+                    passwordInput("new_password", "New Password"),
+                    passwordInput("confirm_password", "Confirm Password"),
+                    actionButton("register", "Register")
+                ),   
+                
+                div(id = "logout_button",
+                    actionButton("logout", "Log Out")
                 )
-              )
-      )
-    )
+              
+    ))
   )
 )
+
+
 
 
 
