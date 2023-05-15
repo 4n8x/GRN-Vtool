@@ -21,4 +21,13 @@ are considered: ARACNE [24], BC3NET[25],C3NET [26], CLR [27],DWLasso[28],GENIE3 
 
 
 #### You can use Two tools in the Website to generate your network [SeqNet](https://github.com/tgrimes/SeqNet),[DIANE](https://github.com/OceaneCsn/DIANE).
+
+
+###Lunching instructions
+You can use GRN-Vtool by entring the website and folow the steps:
+- Upload your normlized dataset from Data Tab>Upload Data
+- Choose your appropriate tool to use for generating the network from Tools Tab
+- Generate the network from Generate Network Tab
+- You can download the output in your local machine
+- You can reguster to save you genareted networks for further usage 
  
