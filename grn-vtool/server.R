@@ -69,7 +69,7 @@ function(input, output, session) {
   
   
   ## LOGIN,REGISTER CODES
- 
+  
   
   # Create a new user database connection
   user_con <- dbConnect(RSQLite::SQLite(), "./data/users.db")
@@ -81,7 +81,7 @@ function(input, output, session) {
   user_info <- reactiveValues(id = NULL, username = NULL)
   
   ## Hide the logout button initially
- ## shinyjs::hideElement("#logout_button")
+  ## shinyjs::hideElement("#logout_button")
   hide("logout_button")
   
   # Define an observer to handle login attempts
@@ -242,22 +242,15 @@ function(input, output, session) {
       hide("register_button")
       ##shinyjs::showElement("#logout_button")
       show("logout_button")
-    
-      # Show a welcome message in a modal dialog
-      showModal(
-        modalDialog(
-          title = "Welcome",
-          paste0("Welcome ", user_info$username, "!"),
-          easyClose = TRUE
-        )
-      )
-     
+      
+      
+      
     } else {
       # Show the login and registration buttons, hide the logout button
       ##shinyjs::showElement("#login_buttons")
       show("login_button")
       show("register_button")
-     ## shinyjs::hideElement("#logout_button")
+      ## shinyjs::hideElement("#logout_button")
       hide("logout_button")
     }
   })
@@ -270,11 +263,3 @@ function(input, output, session) {
   })  ##end of login and register codes
   
 }##end function
-
-
-
-
-
-
-
-
