@@ -209,12 +209,12 @@ function(input, output, session) {
     showModal(
       modalDialog(
         title = "Thank you and come back!",
-        paste0("Thank you ", user_info$username, "!"),
+        paste0("Thank you", user_info$username, "!"),
         easyClose = TRUE
       )
     )
     # Show login and registration buttons
-    
+   
     ##shinyjs::showElement("#login_buttons")
     show("login_button")
     show("register_button")
