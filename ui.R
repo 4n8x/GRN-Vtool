@@ -7,7 +7,9 @@
 #    http://shiny.rstudio.com/
 
 # Define the UI
-ui <- dashboardPage(
+
+
+dashboardPage(
   
   # Define the dashboard header
   dashboardHeader(title = div(
@@ -19,6 +21,9 @@ ui <- dashboardPage(
   
   # Define the sidebar
   dashboardSidebar(
+    
+    # Use shinyjs to hide/show UI elements dynamically
+    useShinyjs(),
     # Sidebar menu
     sidebarMenu(
       # Home menu item
@@ -106,17 +111,66 @@ Join us on this exciting journey as we provide you with the tools you need to un
       # Generate Network tab
       tabItem(tabName = "generate_network",
               h2("Generate Network"),
-              p("Network generation content goes here.")),
-      
-      
-      tabItem(tabName = "Log_in",
-              h2("Log in"),
-              p("Log in content goes here.")
+              p("Network generation content goes here.")
+              ,
+              actionButton("network_button", label = "Generate Network", 
+                           icon = icon("sitemap"), 
+                           style = "background-color: purple; color: white")
+              
+              ,
+              box(
+                
+                title = "Gene Network",
+                status = "primary",
+                solidHeader = TRUE,
+                width = 20,
+                
+                fluidRow(
+                  splitLayout(cellWidths = c("50%", "50%"),plotOutput("network_plot"),
+                              plotOutput("network_plot_2")
+                              
+                  )
+                  
+                )
+              )
       )
-    )
+      ,
+      
+      
+      tabItem(tabName = "Log_in",  ##changed name here
+              h2("Log in"),
+              
+               
+              div(id = "login_button", 
+                
+                textInput("username", "Username"),
+                passwordInput("password", "Password"),
+                br(),
+                actionButton("login", "Log In") ),
+                
+                
+             
+                    br(),
+                      
+                    div(id = "register_button",
+                    tags$p("Don't have an account? Register below."), 
+                          
+                    textInput("new_username", "New Username"),
+                    passwordInput("new_password", "New Password"),
+                    passwordInput("confirm_password", "Confirm Password"),
+                    actionButton("register", "Register")
+                ),   
+                
+                div(id = "logout_button",
+                    actionButton("logout", "Log Out")
+                )
+              
+    ))
   )
 )
 
-# Run the application
-shinyApp(ui = ui, server = function(input, output) {})
+
+
+
+
 
