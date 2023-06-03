@@ -72,10 +72,20 @@ function(input, output, session) {
   
   
   # Create a new user database connection
-  user_con <- dbConnect(RSQLite::SQLite(), "./data/users.db")
+  ##user_con <- dbConnect(RSQLite::SQLite(), "./data/users.db")
+  user_con <- dbConnect(RMySQL::MySQL(),
+                        dbname = "login",
+                        host = "login-grnvtools.cs2w1zfwm4d4.eu-north-1.rds.amazonaws.com",
+                        port = 3306,
+                        user = "admin",
+                        password = "rS268043!")
+  
   
   # Create a new table if it doesn't exist
-  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT)")
+  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TINYTEXT , password_hash TEXT)")
+  # Define a reactive value to store the user ID and username
+  # Create a new table if it doesn't exist
+ ## dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT)")
   
   # Define a reactive value to store the user ID and username
   user_info <- reactiveValues(id = NULL, username = NULL)
@@ -106,6 +116,10 @@ function(input, output, session) {
         # If the credentials are valid, store the user ID and username in the reactive values
         user_info$id <- result$id
         user_info$username <- input$username
+        ##edited
+        show("logout_button")
+        hide("login_button")
+        hide("register_button")
         
         # Show a welcome message in a modal dialog
         showModal(
@@ -214,7 +228,7 @@ function(input, output, session) {
       )
     )
     # Show login and registration buttons
-   
+    
     ##shinyjs::showElement("#login_buttons")
     show("login_button")
     show("register_button")
@@ -263,3 +277,5 @@ function(input, output, session) {
   })  ##end of login and register codes
   
 }##end function
+
+
