@@ -91,13 +91,55 @@ Join us on this exciting journey as we provide you with the tools you need to un
       # Normalize tab
       tabItem(tabName = "normalize",
               h2("Normalize Data"),
-              p("Data normalization content goes here.")
+              
+              actionButton("norm_button", label = "Normalize", 
+                           icon = icon("sitemap"), 
+                           style = "background-color: purple; color: white")
+              
+              ,
+              box(
+                
+                title = "normalized data",
+                status = "primary",
+                solidHeader = TRUE,
+                width = 20,
+                
+                fluidRow(
+                  splitLayout(cellWidths = c("50%", "50%"),plotOutput("norm_plot"),
+                              plotOutput("norm_plot_2")
+                              
+                  )
+                  
+                )
+              )
       ),
       
       # EDA tab
+      # EDA tab
       tabItem(tabName = "eda",
               h2("Exploratory Expression"),
-              p("Exploratory data analysis content goes here.")
+              
+              
+              actionButton("eda_button", label = "expression analysis", 
+                           icon = icon("sitemap"), 
+                           style = "background-color: purple; color: white")
+              
+              ,
+              box(
+                
+                title = "expression analysis",
+                status = "primary",
+                solidHeader = TRUE,
+                width = 20,
+                
+                fluidRow(
+                  splitLayout(cellWidths = c("50%", "50%"),textOutput("eda_plot"),
+                              plotOutput("eda_plot_2")
+                              
+                  )
+                  
+                )
+              )
       ),
       
       # Tools tab
@@ -111,8 +153,8 @@ Join us on this exciting journey as we provide you with the tools you need to un
       # Generate Network tab
       tabItem(tabName = "generate_network",
               h2("Generate Network"),
-              p("Network generation content goes here.")
-              ,
+             
+              
               actionButton("network_button", label = "Generate Network", 
                            icon = icon("sitemap"), 
                            style = "background-color: purple; color: white")
@@ -126,7 +168,7 @@ Join us on this exciting journey as we provide you with the tools you need to un
                 width = 20,
                 
                 fluidRow(
-                  splitLayout(cellWidths = c("50%", "50%"),plotOutput("network_plot"),
+                  splitLayout(cellWidths = c("50%", "50%"),uiOutput("network_plot"),
                               plotOutput("network_plot_2")
                               
                   )
@@ -168,7 +210,6 @@ Join us on this exciting journey as we provide you with the tools you need to un
     ))
   )
 )
-
 
 
 
