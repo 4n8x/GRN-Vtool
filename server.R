@@ -21,18 +21,23 @@
 
 
 
+library(DIANE)
 
 
 
+
+function(input, output, session) {
+
+observeEvent(input$tool_choice ,{
+
+
+  if(input$tool_choice == "seqNet"){
+   
+  
 
 #---
-isSeqNet<-function(V){
-  
-  if(v=="SeqNet")  
-    
-    return(TRUE)
-}
-function(input, output, session) {
+
+
   
   
   observeEvent(input$network_button, {
@@ -64,218 +69,151 @@ function(input, output, session) {
     
     
     
-  })##end network butten
+  })##end network buttonn
   
   
   
-  ## LOGIN,REGISTER CODES
   
   
-  # Create a new user database connection
-  ##user_con <- dbConnect(RSQLite::SQLite(), "./data/users.db")
-  user_con <- dbConnect(RMySQL::MySQL(),
-                        dbname = "login",
-                        host = "login-grnvtools.cs2w1zfwm4d4.eu-north-1.rds.amazonaws.com",
-                        port = 3306,
-                        user = "admin",
-                        password = "rS268043!")
-  
-  
-  # Create a new table if it doesn't exist
-  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TINYTEXT , password_hash TEXT)")
-  # Define a reactive value to store the user ID and username
-  # Create a new table if it doesn't exist
- ## dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT)")
-  
-  # Define a reactive value to store the user ID and username
-  user_info <- reactiveValues(id = NULL, username = NULL)
-  
-  ## Hide the logout button initially
-  ## shinyjs::hideElement("#logout_button")
-  hide("logout_button")
-  
-  # Define an observer to handle login attempts
-  observeEvent(input$login, {
-    # Check if the input values are not empty
-    if (input$username == "" || input$password == "") {
-      # If either input value is empty, show an error message
-      showModal(
-        modalDialog(
-          title = "Error",
-          "Please enter your username and password.",
-          easyClose = TRUE
-        )
-      )
-      
-    } else {
-      # Check if the credentials match a user in the database
-      query <- sprintf("SELECT * FROM users WHERE username = '%s'", input$username)
-      result <- dbGetQuery(user_con, query)
-      
-      if (nrow(result) == 1 && !is.na(result$password_hash) && digest(input$password, algo = "sha256") == result$password_hash) {
-        # If the credentials are valid, store the user ID and username in the reactive values
-        user_info$id <- result$id
-        user_info$username <- input$username
-        ##edited
-        show("logout_button")
-        hide("login_button")
-        hide("register_button")
-        
-        # Show a welcome message in a modal dialog
-        showModal(
-          modalDialog(
-            title = "Welcome",
-            paste0("Welcome, ", user_info$username, "!"),
-            easyClose = TRUE
-          )
-        )
-        
-      } else {
-        # If the credentials are invalid, show an error message
-        showModal(
-          modalDialog(
-            title = "Error",
-            "Invalid username or password.",
-            easyClose = TRUE
-          )
-        )
-      }
-      
-      # Reset the login form
-      updateTextInput(session, "username", value = "")
-      updateTextInput(session, "password", value = "")
-    }
-  })
-  
-  # Define an observer to handle registration attempts
-  observeEvent(input$register, {
-    # Check if the input values are not empty
-    if (input$new_username == "" || input$new_password == "" || input$confirm_password == "") {
-      # If any input values are empty, show an error message
-      showModal(
-        modalDialog(
-          title = "Error",
-          "Please enter a username and password, and confirm your password.",
-          easyClose = TRUE
-        )
-      )
-      
-    } else {
-      # Check if the new username is available
-      query <- sprintf("SELECT COUNT(*) FROM users WHERE username = '%s'", input$new_username)
-      result <- dbGetQuery(user_con, query)
-      
-      if (result[[1]] != 0) {
-        # If the new username is already taken, show an error message
-        showModal(
-          modalDialog(
-            title = "Error",
-            "Username is already taken.",
-            easyClose = TRUE
-          )
-        )
-        
-      } else if (input$new_password != input$confirm_password) {
-        # If the passwords do not match, show an error message
-        showModal(
-          modalDialog(
-            title = "Error",
-            "Passwords do not match.",
-            easyClose = TRUE
-          )
-        )
-        
-      } else {
-        # If the new username is available and passwords match, add the user to the database
-        password_hash <- digest(input$new_password, algo = "sha256")
-        query <- sprintf("INSERT INTO users (username, password_hash) VALUES ('%s', '%s')", input$new_username, password_hash)
-        dbExecute(user_con, query)
-        
-        # Log in the user automatically after registration
-        user_info$id <- dbGetQuery(user_con, paste0("SELECT id FROM users WHERE username = '", input$new_username, "'"))$id
-        user_info$username <- input$new_username
-        
-        # Show a welcome message in a modal dialog
-        showModal(
-          modalDialog(
-            title = "Welcome",
-            paste0("Welcome, ", user_info$username, "!"),
-            easyClose = TRUE
-          )
-        )
-        
-        # Reset the registration form
-        updateTextInput(session, "new_username", value = "")
-        updateTextInput(session, "new_password", value = "")
-        updateTextInput(session, "confirm_password", value = "")
-        hide("register_button") ##hiding here
-      }
-    }
-  })
-  
-  # Define an observer to handlelogout attempts
-  observeEvent(input$logout, {
-    # Clear the user info from the reactive values
-    user_infoid <- NULL
-    user_info$username <- NULL
-    
-    ##adding message
-    showModal(
-      modalDialog(
-        title = "Thank you and come back!",
-        paste0("Thank you", user_info$username, "!"),
-        easyClose = TRUE
-      )
-    )
-    # Show login and registration buttons
-    
-    ##shinyjs::showElement("#login_buttons")
-    show("login_button")
-    show("register_button")
-    ##shinyjs::hideElement("#logout_button")
-    hide("logout_button")
-    # Reset the login and registration forms
-    updateTextInput(session, "username", value = "")
-    updateTextInput(session, "password", value = "")
-    updateTextInput(session, "new_username", value = "")
-    updateTextInput(session, "new_password", value = "")
-    updateTextInput(session, "confirm_password", value = "")
-  })
-  
-  ##  Define a reactive expression to check if the user is logged in
-  user_logged_in <- reactive({
-    !is.null(user_info$id)
-  })
-  
-  ## Define an observer to show/hide UI elements depending on whether the user is logged in
-  observe({
-    if (user_logged_in()) {
-      # Hide the login and registration buttons, show the logout button
-      ##shinyjs::hideElement("#login_buttons")
-      hide("login_button")
-      hide("register_button")
-      ##shinyjs::showElement("#logout_button")
-      show("logout_button")
-      
-      
-      
-    } else {
-      # Show the login and registration buttons, hide the logout button
-      ##shinyjs::showElement("#login_buttons")
-      show("login_button")
-      show("register_button")
-      ## shinyjs::hideElement("#logout_button")
-      hide("logout_button")
-    }
-  })
-  
-  
-  
-  ## Disconnect from the user database when the app is closed
-  session$onSessionEnded(function() {
-    dbDisconnect(user_con)
-  })  ##end of login and register codes
-  
-}##end function
 
 
+  }#end of seqnet
+
+  if(input$tool_choice == "DIANE"){
+
+
+  
+  
+  observeEvent(input$norm_button, {
+    
+    data1<<-read_csv(input$data_file1$datapath ,show_col_types = FALSE)
+    
+    data1<<-as.data.frame(data1)
+    sapply(data1,class)
+    
+    
+    
+    
+    
+    
+    
+    data("abiotic_stresses")
+    data("gene_annotations")
+    data("regulators_per_organism")
+    
+    DIANE::draw_distributions(abiotic_stresses$raw_counts, boxplot = TRUE)
+    #normalization using the defult paramaters
+    tcc_object <<- DIANE::normalize(abiotic_stresses$raw_counts, norm_method = 'tmm', iteration = FALSE)
+    
+    #Low counts removal (allow only genes with more than 10 counts per sample in average)
+    
+    threshold = 10*length(abiotic_stresses$conditions)
+    tcc_object <<- DIANE::filter_low_counts(tcc_object, threshold)
+    normalized_counts <<- TCC::getNormalizedData(tcc_object)
+    
+    
+    output$norm_plot<<-renderPlot({plot(tcc_object)})
+    
+
+    
+    
+    
+  })##end nomrm button
+  
+  
+  observeEvent(input$eda_button, {
+    
+    #Differential expression analysis
+    fit <<- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
+    #> Warning in edgeR::DGEList(counts = tcc$count, lib.size = tcc$norm.factors, :
+    #> norm factors don't multiply to 1
+    topTags <<- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 0.01, lfc = 2)
+    
+    # adding annotations
+    DEgenes <<- topTags$table
+    DEgenes[,c("name", "description")] <- gene_annotations$`Arabidopsis thaliana`[
+      match(get_locus(DEgenes$genes, unique = FALSE), rownames(gene_annotations$`Arabidopsis thaliana`)),
+      c("label", "description")]
+    
+    knitr::kable(head(DEgenes, n = 10))
+    
+    #Network inference
+    #Regulators for your organism
+    aggregated_data <<- aggregate_splice_variants(data = normalized_counts)
+    
+    #Grouping highly correlated regulators
+    
+    genes <<- get_locus(topTags$table$genes)
+    regressors <<- intersect(genes, regulators_per_organism[["Arabidopsis thaliana"]])
+    
+    # use normalized counts if you did not aggregate splice variants
+    grouping <- DIANE::group_regressors(aggregated_data, genes, regressors)
+    #> [1] "adding tf  AT1G74890  to group  2 because correlation of -0.912173913043478 to mean"
+    #> [1] 19
+    #> [1] "adding tf  AT5G59570  to group  4 because correlation of -0.919130434782609 to mean"
+    #> [1] 18
+    
+    grouped_counts <<- grouping$counts
+    
+    grouped_targets <<- grouping$grouped_genes
+    
+    grouped_regressors <<- grouping$grouped_regressors
+    
+    
+    genes <<- topTags$table$genes
+    
+  
+    DIANE::draw_heatmap(normalized_counts, subset = genes, 
+                        title = "Log expression for DE genes under heat stress")
+  output$eda_plot<<-renderPrint({"done"})
+    
+    
+    
+  })##end eda button
+  
+  
+  observeEvent(input$network_button, {
+    
+    set.seed(123)
+    mat <<- DIANE::network_inference(grouped_counts, conds = abiotic_stresses$conditions, 
+                                    targets = grouped_targets, regressors = grouped_regressors, 
+                                    nCores = 1, verbose = FALSE)
+    
+    network <<- DIANE::network_thresholding(mat, n_edges = length(genes))
+    
+    data <- network_data(network, regulators_per_organism[["Arabidopsis thaliana"]], 
+                         gene_annotations$`Arabidopsis thaliana`)
+    
+    knitr::kable(head(data$nodes))
+    genes <<- topTags$table$genes
+    
+   output$eda_plot<<-renderUI( {DIANE::draw_heatmap(normalized_counts, subset = genes, 
+                        title = "Log expression for DE genes under heat stress")})
+    
+    #viualize
+    #(the interactive graph network will be seen here)
+    DIANE::draw_network(data$nodes, data$edges)
+    
+    nGenes = length(grouped_targets)
+    nRegulators = length(grouped_regressors)
+    
+    res <<- data.frame(density = seq(0.001, 0.1, length.out = 20),
+                      nEdges = sapply(seq(0.001, 0.1, length.out = 20),
+                                      get_nEdges, nGenes, nRegulators))
+   
+    
+    
+   
+    output$network_plot<<-renderUI({DIANE::draw_network(data$nodes, data$edges)})
+    
+
+    
+  })##end network button
+  
+}#end of diane
+
+
+}#end of tool choice
+
+
+)}#end session function
