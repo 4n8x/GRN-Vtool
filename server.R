@@ -62,9 +62,9 @@ observeEvent(input$tool_choice ,{
     g <-network
     
     
-    output$network_plot<-renderPlot({plot(g)})
+    output$network_plot<-renderui({plot(g)})
     
-    output$network_plot_2<-renderPlot({plot(g)})
+    output$network_plot_2<-renderui({plot(g)})
     
     
     
