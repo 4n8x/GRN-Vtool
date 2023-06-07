@@ -168,8 +168,10 @@ Join us on this exciting journey as we provide you with the tools you need to un
                 width = 20,
                 
                 fluidRow(
-                  splitLayout(cellWidths = c("50%", "50%"),uiOutput("network_plot"),
-                              plotOutput("network_plot_2")
+                   splitLayout(cellWidths = c("50%", "50%"),uiOutput("network_plot"),
+                             uiOutput("network_plot_2")
+                              
+                 
                               
                   )
                   
