@@ -24,7 +24,7 @@ DIANE is an R package, is a simple exploratory visualization, that allows the us
 #### You can use Two tools on the Website to generate your network [SeqNet](https://github.com/tgrimes/SeqNet),[DIANE](https://github.com/OceaneCsn/DIANE).
 
 
-###Lunching instructions
+### Lunching instructions
 You can use GRN-Vtool by entering the website and following the steps:
 - Upload your normalized dataset from Data Tab>Upload Data
 - Choose your appropriate tool to use for generating the network from the Tools Tab
