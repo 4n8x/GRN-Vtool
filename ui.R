@@ -12,8 +12,8 @@
 dashboardPage(
   
   # Define the dashboard header
-  dashboardHeader(title = div(
-    img(src = normalizePath("C:/Users/user/Desktop/GRNN/GRN/GRNNEW/logo.jpeg"), height = "30px"),
+  dashboardHeader(title = div(imageOutput("Logo",width = "100%", height = "400px")
+   ,
     "GRN VTOOLS",
     style = "display: flex; align-items: center; justify-content: center;"
   ), 
@@ -91,55 +91,13 @@ Join us on this exciting journey as we provide you with the tools you need to un
       # Normalize tab
       tabItem(tabName = "normalize",
               h2("Normalize Data"),
-              
-              actionButton("norm_button", label = "Normalize", 
-                           icon = icon("sitemap"), 
-                           style = "background-color: purple; color: white")
-              
-              ,
-              box(
-                
-                title = "normalized data",
-                status = "primary",
-                solidHeader = TRUE,
-                width = 20,
-                
-                fluidRow(
-                  splitLayout(cellWidths = c("50%", "50%"),plotOutput("norm_plot"),
-                              plotOutput("norm_plot_2")
-                              
-                  )
-                  
-                )
-              )
+              p("Data normalization content goes here.")
       ),
       
       # EDA tab
-      # EDA tab
       tabItem(tabName = "eda",
               h2("Exploratory Expression"),
-              
-              
-              actionButton("eda_button", label = "expression analysis", 
-                           icon = icon("sitemap"), 
-                           style = "background-color: purple; color: white")
-              
-              ,
-              box(
-                
-                title = "expression analysis",
-                status = "primary",
-                solidHeader = TRUE,
-                width = 20,
-                
-                fluidRow(
-                  splitLayout(cellWidths = c("50%", "50%"),textOutput("eda_plot"),
-                              plotOutput("eda_plot_2")
-                              
-                  )
-                  
-                )
-              )
+              p("Exploratory data analysis content goes here.")
       ),
       
       # Tools tab
@@ -147,14 +105,14 @@ Join us on this exciting journey as we provide you with the tools you need to un
               h2("Tools"),
               p("Choose a network generation tool:"),
               selectInput("tool_choice", label = "Choose Network Generation Tool:", 
-                          choices = list("SeqNet", "DIANE"), 
-                          selected = "SeqNet")),
+                         choices =c("SeqNet", "DIANE"), 
+                          selected = "SeqNet",selectize=TRUE)),
       
       # Generate Network tab
       tabItem(tabName = "generate_network",
               h2("Generate Network"),
-             
-              
+              p("Network generation content goes here.")
+              ,
               actionButton("network_button", label = "Generate Network", 
                            icon = icon("sitemap"), 
                            style = "background-color: purple; color: white")
@@ -168,10 +126,8 @@ Join us on this exciting journey as we provide you with the tools you need to un
                 width = 20,
                 
                 fluidRow(
-                   splitLayout(cellWidths = c("50%", "50%"),uiOutput("network_plot"),
-                             uiOutput("network_plot_2")
-                              
-                 
+                  splitLayout(cellWidths = c("100%", "0%"),plotOutput("network_plot"),
+                              plotOutput("network_plot_2")
                               
                   )
                   
@@ -184,32 +140,32 @@ Join us on this exciting journey as we provide you with the tools you need to un
       tabItem(tabName = "Log_in",  ##changed name here
               h2("Log in"),
               
-               
-              div(id = "login_button", 
-                
-                textInput("username", "Username"),
-                passwordInput("password", "Password"),
-                br(),
-                actionButton("login", "Log In") ),
-                
-                
-             
-                    br(),
-                      
-                    div(id = "register_button",
-                    tags$p("Don't have an account? Register below."), 
-                          
-                    textInput("new_username", "New Username"),
-                    passwordInput("new_password", "New Password"),
-                    passwordInput("confirm_password", "Confirm Password"),
-                    actionButton("register", "Register")
-                ),   
-                
-                div(id = "logout_button",
-                    actionButton("logout", "Log Out")
-                )
               
-    ))
+              div(id = "login_button", 
+                  
+                  textInput("username", "Username"),
+                  passwordInput("password", "Password"),
+                  br(),
+                  actionButton("login", "Log In") ),
+              
+              
+              
+              br(),
+              
+              div(id = "register_button",
+                  tags$p("Don't have an account? Register below."), 
+                  
+                  textInput("new_username", "New Username"),
+                  passwordInput("new_password", "New Password"),
+                  passwordInput("confirm_password", "Confirm Password"),
+                  actionButton("register", "Register")
+              ),   
+              
+              div(id = "logout_button",
+                  actionButton("logout", "Log Out")
+              )
+              
+      ))
   )
 )
 
