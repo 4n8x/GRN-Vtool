@@ -21,3 +21,7 @@ library(digest) # Load the digest package
 library(shinyjs)
 library(DBI)
 library(RMySQL)
+#from here
+library(conflicted)
+conflicts_prefer(shinydashboard::box)
+conflicts_prefer(RSQLite::show)
