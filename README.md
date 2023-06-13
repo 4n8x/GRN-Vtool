@@ -17,7 +17,7 @@ DIANE is an R package, is a simple exploratory visualization, that allows the us
  
 
 #### SeqNet is the second method we chose for GRN inference, it uses Twelve co-expression methods 
-are considered: ARACNE [24], BC3NET[25],C3NET [26], CLR [27],DWLasso[28],GENIE3 [29],Glasso[30],MR-NET [31],Pearson correlation, Shrinkage[32],Silencer[33],and Spearman correlation. ARACNE, CLR, and MRNET were run using the default settings provided by the minet R package [34], with "spearman" being used as the entropy estimator. In Figure you can see a summary of the main SeqNet functions.
+
 <img width="468" alt="SeqNetTable" src="https://user-images.githubusercontent.com/51384420/236009398-70b4a36b-1d10-4825-b889-6b83b9c5c57d.png">
 
 
