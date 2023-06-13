@@ -7,13 +7,14 @@
 #    http://shiny.rstudio.com/
 
 # Define the UI
-
+##
 
 dashboardPage(
   
   # Define the dashboard header
-  dashboardHeader(title = div(imageOutput("Logo",width = "100%", height = "400px")
-   ,
+  dashboardHeader(title = div(
+    ##img(src = normalizePath("C:/Users/user/Desktop/GRNN/GRN/GRNNEW/logo.jpeg"), height = "30px"),
+    img(src="logo.png", height = "30px"),
     "GRN VTOOLS",
     style = "display: flex; align-items: center; justify-content: center;"
   ), 
@@ -22,8 +23,7 @@ dashboardPage(
   # Define the sidebar
   dashboardSidebar(
     
-    # Use shinyjs to hide/show UI elements dynamically
-    useShinyjs(),
+    ##edited
     # Sidebar menu
     sidebarMenu(
       # Home menu item
@@ -52,6 +52,8 @@ dashboardPage(
   
   # Define the main body
   dashboardBody(
+    # Use shinyjs to hide/show UI elements dynamically
+    useShinyjs(),
     # Tab items
     tabItems(
       # Home tab
@@ -77,14 +79,14 @@ Join us on this exciting journey as we provide you with the tools you need to un
               conditionalPanel(
                 condition = "input.num_files == 'one'",
                 fileInput("data_file1", "Upload Data File", 
-                          accept = c(".csv", ".tsv", ".txt"))
+                          accept = c(".csv"))
               ),
               conditionalPanel(
                 condition = "input.num_files == 'two'",
                 fileInput("data_file1", "Upload Data File 1", 
-                          accept = c(".csv", ".tsv", ".txt")),
+                          accept = c(".csv")),
                 fileInput("data_file2", "Upload Data File 2", 
-                          accept = c(".csv", ".tsv", ".txt"))
+                          accept = c(".csv"))
               )
       ),
       
@@ -105,8 +107,8 @@ Join us on this exciting journey as we provide you with the tools you need to un
               h2("Tools"),
               p("Choose a network generation tool:"),
               selectInput("tool_choice", label = "Choose Network Generation Tool:", 
-                         choices =c("SeqNet", "DIANE"), 
-                          selected = "SeqNet",selectize=TRUE)),
+                          choices = list("SeqNet"), 
+                          selected = "SeqNet")),
       
       # Generate Network tab
       tabItem(tabName = "generate_network",
@@ -126,7 +128,7 @@ Join us on this exciting journey as we provide you with the tools you need to un
                 width = 20,
                 
                 fluidRow(
-                  splitLayout(cellWidths = c("100%", "0%"),plotOutput("network_plot"),
+                  splitLayout(cellWidths = c("50%", "50%"),plotOutput("network_plot"),
                               plotOutput("network_plot_2")
                               
                   )
@@ -161,15 +163,13 @@ Join us on this exciting journey as we provide you with the tools you need to un
                   actionButton("register", "Register")
               ),   
               
+              
               div(id = "logout_button",
                   actionButton("logout", "Log Out")
-              )
+              )  
+              
               
       ))
   )
 )
-
-
-
-
 
