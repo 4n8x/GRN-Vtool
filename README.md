@@ -1,6 +1,6 @@
 ![322084859_1616597628753563_6938419133639811086_n](https://github.com/4n8x/GRN-Vtool/assets/51384420/ca38704f-4465-486f-9cdf-0fcbac36be75)
 ## GRN Vtool
-https://grn-vtool.shinyapps.io/grn-vtool/
+https://grnvtool.shinyapps.io/grn-vtool/
 ### Website Goal
 
 ##### GRN-Vtool is a website that allows biologists to run many GRN tools, in our website you we aid for:
