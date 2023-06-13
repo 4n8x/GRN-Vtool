@@ -33,49 +33,76 @@ isSeqNet<-function(V){
     return(TRUE)
 }
 function(input, output, session) {
-
- output$Logo<- renderImage({list(src="logo.jpg",width="30%", hight=60)
-    
-    
-    })
-
   
-x<- output$network_plot<-renderPlot({
   
-  if({input$tool_choice == ("SeqNet")} ){
-    p <- 100 # Number of nodes (genes) in the network.
-    n <- 100 # Number of samples to generate.
-    network <- random_network(p) # Create a random network of size p.
-    network <- gen_partial_correlations(network) # Generate weights.
-    df_ref <- SeqNet::reference$rnaseq  # The reference dataset
+  #from here**
+  x<- output$network_plot<-renderPlot({
     
-    g <-network
-    plot(g)
-  }
-  else {( "no network is generated")}
+    if({input$tool_choice == ("SeqNet")} ){
+      p <- 100 # Number of nodes (genes) in the network.
+      n <- 100 # Number of samples to generate.
+      network <- random_network(p) # Create a random network of size p.
+      network <- gen_partial_correlations(network) # Generate weights.
+      df_ref <- SeqNet::reference$rnaseq  # The reference dataset
+      
+      g <-network
+      plot(g)
+    }
+    else {( "no network is generated")}
+    
+  })
   
-})
-
   
   observeEvent(input$network_button, {
     
     data1<-read_csv(input$data_file1$datapath ,show_col_types = FALSE)
     
-    data1<-as.data.frame(data1)
-    sapply(data1,class)
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  })##end network butten Version 2
   
-    
+  ## observeEvent(input$network_button, {
   
-   
-    
-   
-    
-    
-    
-    
-    
-  })##end network butten
+  ##data1<-read_csv(input$data_file1$datapath ,show_col_types = FALSE)
+  
+  ##data1<-as.data.frame(data1)
+  ## sapply(data1,class)
+  
+  
+  
+  
+  
+  
+  
+  ## p <- 100 # Number of nodes (genes) in the network.
+  ##n <- 100 # Number of samples to generate.
+  ##network <- random_network(p) # Create a random network of size p.
+  ##network <- gen_partial_correlations(network) # Generate weights.
+  ##df_ref <- SeqNet::reference$rnaseq  # The reference dataset
+  
+  ##  g <-network
+  
+  
+  ##output$network_plot<-renderPlot({plot(g)})
+  
+  ## output$network_plot_2<-renderPlot({plot(g)})
+  
+  
+  
+  
+  ## })##end network butten-version 1
   
   
   
@@ -83,17 +110,28 @@ x<- output$network_plot<-renderPlot({
   
   
   # Create a new user database connection
-  user_con <- dbConnect(RSQLite::SQLite(), "./data/users.db")
+  ##user_con <- dbConnect(RSQLite::SQLite(), "./data/users.db")
+  user_con <- dbConnect(RMySQL::MySQL(),
+                        dbname = "login",
+                        host = "login-grnvtools.cs2w1zfwm4d4.eu-north-1.rds.amazonaws.com",
+                        port = 3306,
+                        user = "admin",
+                        password = "rS268043!")
+  
   
   # Create a new table if it doesn't exist
-  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT)")
+  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TINYTEXT , password_hash TEXT)")
+  # Define a reactive value to store the user ID and username
+  # Create a new table if it doesn't exist
+  ## dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT)")
+  shinyjs::hide("logout_button")
   
   # Define a reactive value to store the user ID and username
   user_info <- reactiveValues(id = NULL, username = NULL)
   
   ## Hide the logout button initially
   ## shinyjs::hideElement("#logout_button")
-  hide("logout_button")
+  
   
   # Define an observer to handle login attempts
   observeEvent(input$login, {
@@ -117,6 +155,8 @@ x<- output$network_plot<-renderPlot({
         # If the credentials are valid, store the user ID and username in the reactive values
         user_info$id <- result$id
         user_info$username <- input$username
+        ##edited
+        
         
         # Show a welcome message in a modal dialog
         showModal(
@@ -126,6 +166,9 @@ x<- output$network_plot<-renderPlot({
             easyClose = TRUE
           )
         )
+        shinyjs::show("logout_button")
+        hide("login_button")
+        hide("register_button")
         
       } else {
         # If the credentials are invalid, show an error message
@@ -200,12 +243,17 @@ x<- output$network_plot<-renderPlot({
             easyClose = TRUE
           )
         )
+        ## hide("login_button")
+        ## hide("register_button")
+        shinyjs::hide("register_button")
         
+        shinyjs::hide("login_button")
+        shinyjs::show("logout_button")
         # Reset the registration form
         updateTextInput(session, "new_username", value = "")
         updateTextInput(session, "new_password", value = "")
         updateTextInput(session, "confirm_password", value = "")
-        hide("register_button") ##hiding here
+        
       }
     }
   })
@@ -227,10 +275,11 @@ x<- output$network_plot<-renderPlot({
     # Show login and registration buttons
     
     ##shinyjs::showElement("#login_buttons")
-    show("login_button")
-    show("register_button")
+    shinyjs::show("register_button")
+    
+    shinyjs::show("login_button")
     ##shinyjs::hideElement("#logout_button")
-    hide("logout_button")
+    shinyjs::hide("logout_button")
     # Reset the login and registration forms
     updateTextInput(session, "username", value = "")
     updateTextInput(session, "password", value = "")
@@ -244,16 +293,22 @@ x<- output$network_plot<-renderPlot({
     !is.null(user_info$id)
   })
   
+  
+  
+  
   ## Define an observer to show/hide UI elements depending on whether the user is logged in
   observe({
     if (user_logged_in()) {
+      
+      
+      
+      
       # Hide the login and registration buttons, show the logout button
       ##shinyjs::hideElement("#login_buttons")
       hide("login_button")
       hide("register_button")
       ##shinyjs::showElement("#logout_button")
       show("logout_button")
-      
       
       
     } else {
@@ -263,6 +318,7 @@ x<- output$network_plot<-renderPlot({
       show("register_button")
       ## shinyjs::hideElement("#logout_button")
       hide("logout_button")
+      
     }
   })
   
@@ -274,3 +330,5 @@ x<- output$network_plot<-renderPlot({
   })  ##end of login and register codes
   
 }##end function
+
+
