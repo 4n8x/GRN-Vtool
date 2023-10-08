@@ -1,5 +1,7 @@
 install.packages("SeqNet")
-install.packages(BiocManager)
+install.packages("BiocManager")
+library(BiocManager)
+options(repos = BiocManager::repositories())
 install.packages(shiny)
 install.packages(ggplot2)
 install.packages(plotly)
@@ -22,4 +24,14 @@ install.packages(shinyjs)
 install.packages(DBI)
 install.packages(RMySQL)
 install.packages(DIANE)
+
 install.packages("remotes")
+
+install.packages("digest")
+install.packages("rlang")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install()
+
+library(DIANE)
