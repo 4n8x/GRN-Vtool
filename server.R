@@ -8,9 +8,10 @@
 #
 
 library(shiny)
+library(DIANE)
 
 server <- function(input, output, session) {
-  
+  rv <- reactiveValues(topTags = NULL)
   # Initialize an empty igraph graph object
   g <- reactiveVal(NULL)
   
@@ -169,7 +170,7 @@ server <- function(input, output, session) {
     
     }
   })
-  
+
   observeEvent(input$de_button, {
     if ("diane" %in% input$tool_choice) {
       
@@ -182,9 +183,7 @@ server <- function(input, output, session) {
       #> Warning in edgeR::DGEList(counts = tcc$count, lib.size = tcc$norm.factors, :
       #> norm factors don't multiply to 1
       
-     
-      
-      topTags <<- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 0.01, lfc = 2)
+   
       
       # adding annotations
       DEgenes <<- topTags$table
@@ -230,40 +229,33 @@ server <- function(input, output, session) {
     }
   })
   
-  observeEvent(input$ebc_button, {
-    if ("diane" %in% input$tool_choice) {
-      
-      
-      #Expression based clustering
-      genes <- topTags$table$genes
-      
-      clustering <- DIANE::run_coseq(conds = unique(abiotic_stresses$conditions), data = normalized_counts, 
-                                     genes = genes, K = 6:9, transfo = "arcsin", model = "Normal", seed = 123)
-      #> ****************************************
-      #> coseq analysis: Normal approach & arcsin transformation
-      #> K = 6 to 9 
-      #> Use seed argument in coseq for reproducible results.
-      #> ****************************************
-      
-      
-      
-      
-      
-      
-      
-      
-      output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data = normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
-      
-      
-      
-      
-      
-      
-      
-      
-      
+  observeEvent(input$de_button, {
+    # Load and preprocess your data here (replace with your data loading and preprocessing logic)
+    data_file3 <- read.csv(input$data_file3$datapath)
+    
+    # Perform differential expression analysis
+    fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
+    topTags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 0.01, lfc = 2)
+    
+    # Store the result in rv$topTags
+    rv$topTags <- topTags
+  })
+  
+  # Define the UI to display the result
+  output$de_result_table <- renderTable({
+    topTags <- rv$topTags
+    if (!is.null(topTags)) {
+      # Display the result (e.g., a table)
+      knitr::kable(head(topTags$table, n = 10))
     }
   })
+  
+
+
+
+
+
+
   
   observeEvent(input$generate_button, {
     if ("diane" %in% input$tool_choice) {
@@ -371,5 +363,285 @@ server <- function(input, output, session) {
     }
   })
   
-}
+  ##Database connection,login,register
+  
+  user_con <- dbConnect(RMySQL::MySQL(),
+                        dbname = "login",
+                        host = "login-grnvtools.cs2w1zfwm4d4.eu-north-1.rds.amazonaws.com",
+                        port = 3306,
+                        user = "admin",
+                        password = "rS268043!")
+  
+  
+  # Create a new table if it doesn't exist
+  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TINYTEXT , password_hash TEXT)")
+  
+  shinyjs::hide("logout")
+  shinyjs::hide("data_menu")
+  shinyjs::hide("tools_menu")
+  shinyjs::hide("network_menu")
+  shinyjs::hide("download_menu")
+  user_info <- reactiveValues(id = NULL, username = NULL)
+  
+  user_logged_in <- reactive({
+    !is.null(user_info$id)
+  })
+  
+  # Define an observer to handle login attempts
+  observeEvent(input$login, {
+    # Check if the input values are not empty
+    if (input$username == "" || input$password == "") {
+      # If either input value is empty, show an error message
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter your username and password.",
+          easyClose = TRUE
+        )
+      )
+      
+    } else {
+      # Check if the credentials match a user in the database
+      query <- sprintf("SELECT * FROM users WHERE username = '%s'", input$username)
+      result <- dbGetQuery(user_con, query)
+      input_password <- charToRaw(input$password)
+      input_username <- charToRaw(input$username)
+      database_username <- charToRaw(result$username)
+      if (nrow(result) == 1 && !is.na(result$password_hash) && digest(input$password, algo = "sha256") == result$password_hash && (database_username == input_username)) {
+        # If the credentials are valid, store the user ID and username in the reactive values
+        user_info$id <- result$id
+        user_info$username <- input$username
+        ##edited
+        
+        
+        # Show a welcome message in a modal dialog
+        showModal(
+          modalDialog(
+            title = "Welcome",
+            paste0("Welcome, ", user_info$username, "!, proceed to visualize GRN starting from Data tab "),
+            easyClose = TRUE
+          )
+        )
+        shinyjs::show("logout")
+        shinyjs::show("data_menu")
+        shinyjs::show("tools_menu")
+        shinyjs::show("network_menu")
+        shinyjs::show("download_menu")
+        shinyjs::hide("login_button")
+        shinyjs::hide("register_button")
+        
+      } else {
+        # If the credentials are invalid, show an error message
+        showModal(
+          modalDialog(
+            title = "Error",
+            "Invalid username or password.",
+            easyClose = TRUE
+          )
+        )
+      }
+      
+      # Reset the login form
+      updateTextInput(session, "username", value = "")
+      updateTextInput(session, "password", value = "")
+    }
+  })##observe login attempts
+  
+  
+  # Define an observer to handle registration attempts
+  observeEvent(input$register, {
+    length_username <- nchar(input$new_username)
+    length_password <- nchar(input$new_password)
+    special_char <- input$new_password
+    capital_letter <- input$new_password
+    special_char_count <- nchar(gsub("[[:alnum:]\\s]", "", special_char))
+    
+    # Check if the input values are not empty
+    if (input$new_username == "" || input$new_password == "" || input$confirm_password == "") {
+      # If any input values are empty, show an error message
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a username and password, and confirm your password.",
+          easyClose = TRUE
+        )
+      )
+      
+    }
+    
+    ##Adding password and username being 8 characters long
+    
+    else if (length_username <8 || length_password < 8) {
+      # If any input values are less than 8 characters show error message
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a username and password that are at least 8 characters long",
+          easyClose = TRUE
+        )
+      )
+      
+    }
+    
+    ##Adding passwords having special characters (at least 2)
+    
+    else if (special_char_count < 2) {
+      
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a password that has at least 2 special character.",
+          easyClose = TRUE
+        )
+      )
+      
+    } 
+    
+    else if(!grepl("[A-Z]", capital_letter)){
+      
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a password that has at least 1 capital letter.",
+          easyClose = TRUE
+        )
+      )
+      
+    }
+    
+    
+    
+    else {
+      # Check if the new username is available
+      query <- sprintf("SELECT COUNT(*) FROM users WHERE username = '%s'", input$new_username)
+      result <- dbGetQuery(user_con, query)
+      
+      if (result[[1]] != 0) {
+        # If the new username is already taken, show an error message
+        showModal(
+          modalDialog(
+            title = "Error",
+            "Username is already taken.",
+            easyClose = TRUE
+          )
+        )
+        
+      } else if (input$new_password != input$confirm_password) {
+        # If the passwords do not match, show an error message
+        showModal(
+          modalDialog(
+            title = "Error",
+            "Passwords do not match.",
+            easyClose = TRUE
+          )
+        )
+        
+      } else {
+        # If the new username is available and passwords match, add the user to the database
+        password_hash <- digest(input$new_password, algo = "sha256")
+        query <- sprintf("INSERT INTO users (username, password_hash) VALUES ('%s', '%s')", input$new_username, password_hash)
+        dbExecute(user_con, query)
+        
+        # Log in the user automatically after registration
+        user_info$id <- dbGetQuery(user_con, paste0("SELECT id FROM users WHERE username = '", input$new_username, "'"))$id
+        user_info$username <- input$new_username
+        
+        
+        
+        
+        showModal(
+          modalDialog(
+            title = "Welcome",
+            paste0("Welcome, ", user_info$username, "!, proceed to visualize GRN starting from Data tab."),
+            easyClose = TRUE
+          )
+        )
+        
+        
+        ##Hide/show test later
+        
+        
+        # Reset the registration form
+        updateTextInput(session, "new_username", value = "")
+        updateTextInput(session, "new_password", value = "")
+        updateTextInput(session, "confirm_password", value = "")
+        
+        
+      }
+    }
+  }) #Observe register attempts
+  
+  
+  # Clear the user info from the reactive values
+  observeEvent(input$logout, {
+    
+    
+    user_info$id <- NULL
+    user_info$username <- NULL
+    
+    ##adding message
+    showModal(
+      modalDialog(
+        title = "Thank you for using GRNVtool!",
+        paste0("Thank you", user_info$username, "!"),
+        easyClose = TRUE
+      )
+    )
+    
+    
+    shinyjs::runjs("setTimeout(function() { window.location.href = '/' }, 2000);")
+    
+    
+    
+    # Reset the login and registration form (comment for now)
+    updateTextInput(session, "username", value = "")
+    updateTextInput(session, "password", value = "")
+    updateTextInput(session, "new_username", value = "")
+    updateTextInput(session, "new_password", value = "")
+    updateTextInput(session, "confirm_password", value = "")
+    
+  })
+  
+  ##redirect test 
+  
+  
+  
+  observe({
+    if (user_logged_in()) {
+      
+      shinyjs::hide("login_button")
+      shinyjs::hide("register_button")
+      
+      shinyjs::show("logout")
+      shinyjs::show("data_menu")
+      shinyjs::show("tools_menu")
+      shinyjs::show("network_menu")
+      shinyjs::show("download_menu")
+    } else{
+      
+      shinyjs::show("login_button")
+      shinyjs::show("register_button")
+      
+      shinyjs::hide("logout")
+      shinyjs::hide("data_menu")
+      shinyjs::hide("tools_menu")
+      shinyjs::hide("network_menu")
+      shinyjs::hide("download_menu")
+      
+      
+      
+    }
+    
+  })
+  
+  ## Disconnect from the user database when the app is closed
+  session$onSessionEnded(function() {
+    dbDisconnect(user_con)
+  })  ##end of login and register codes
+  
+  
+  
+  
+  
+}#end session function
   
