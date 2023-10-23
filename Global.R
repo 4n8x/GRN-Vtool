@@ -1,7 +1,8 @@
 library("SeqNet")
 library(BiocManager)
+options(repos= BiocManager::repositories())
 library(shiny)
-
+library("ggtree")
 library(ggplot2)
 library(plotly)
 library(igraph)
@@ -27,5 +28,3 @@ library(conflicted)
 conflicts_prefer(shinydashboard::box)
 conflicts_prefer(RSQLite::show)
 library(shinyauthr)
-
-
