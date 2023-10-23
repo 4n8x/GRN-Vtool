@@ -7,9 +7,6 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
-library(DIANE)
-
 server <- function(input, output, session) {
   rv <- reactiveValues(topTags = NULL)
   # Initialize an empty igraph graph object
@@ -149,7 +146,7 @@ server <- function(input, output, session) {
       data("abiotic_stresses")
       data("gene_annotations")
       data("regulators_per_organism")
-     
+      
       
       DIANE::draw_distributions(abiotic_stresses$raw_counts, boxplot = TRUE)
       #normalization using the defult paramaters
@@ -167,10 +164,10 @@ server <- function(input, output, session) {
       
       
       
-    
+      
     }
   })
-
+  
   observeEvent(input$de_button, {
     if ("diane" %in% input$tool_choice) {
       
@@ -183,7 +180,7 @@ server <- function(input, output, session) {
       #> Warning in edgeR::DGEList(counts = tcc$count, lib.size = tcc$norm.factors, :
       #> norm factors don't multiply to 1
       
-   
+      
       
       # adding annotations
       DEgenes <<- topTags$table
@@ -250,12 +247,12 @@ server <- function(input, output, session) {
     }
   })
   
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
   
   observeEvent(input$generate_button, {
     if ("diane" %in% input$tool_choice) {
@@ -429,6 +426,8 @@ server <- function(input, output, session) {
         shinyjs::show("download_menu")
         shinyjs::hide("login_button")
         shinyjs::hide("register_button")
+        shinyjs::hide("register_menu")
+        shinyjs::hide("login_menu")
         
       } else {
         # If the credentials are invalid, show an error message
@@ -611,7 +610,8 @@ server <- function(input, output, session) {
       
       shinyjs::hide("login_button")
       shinyjs::hide("register_button")
-      
+      shinyjs::hide("login_menu")
+      shinyjs::hide("register_menu")
       shinyjs::show("logout")
       shinyjs::show("data_menu")
       shinyjs::show("tools_menu")
@@ -644,4 +644,3 @@ server <- function(input, output, session) {
   
   
 }#end session function
-  
