@@ -1,6 +1,7 @@
 library("SeqNet")
 library(BiocManager)
 library(shiny)
+
 library(ggplot2)
 library(plotly)
 library(igraph)
@@ -21,7 +22,10 @@ library(digest) # Load the digest package
 library(shinyjs)
 library(DBI)
 library(RMySQL)
-#from here
+library(DIANE)
 library(conflicted)
 conflicts_prefer(shinydashboard::box)
 conflicts_prefer(RSQLite::show)
+library(shinyauthr)
+
+
