@@ -6,9 +6,7 @@
 #
 #    http://shiny.rstudio.com/
 #
-library(edgeR)
-library(shiny)
-library(DIANE)
+
 
 server <- function(input, output, session) {
   
@@ -73,7 +71,7 @@ server <- function(input, output, session) {
           status = "primary",
           solidHeader = TRUE,
           width = 20, # Increase the width to 20 columns for bigger box
-          plotOutput("seqnet_network_plot"),
+          visNetworkOutput("seqnet_network_plot"),
           align = "center" # Center align the box
         )
       } else if (input$num_files == "two") {
@@ -83,7 +81,7 @@ server <- function(input, output, session) {
             status = "primary",
             solidHeader = TRUE,
             width = 20, # Increase the width to 20 columns for bigger box
-            plotOutput("seqnet_network_plot_1"),
+            visNetworkOutput("seqnet_network_plot_1"),
             align = "center" # Center align the box
           )),
           column(6, box(
@@ -91,7 +89,7 @@ server <- function(input, output, session) {
             status = "primary",
             solidHeader = TRUE,
             width = 20, # Increase the width to 20 columns for bigger box
-            plotOutput("seqnet_network_plot_2"),
+            visNetworkOutput("seqnet_network_plot_2"),
             align = "center" # Center align the box
           ))
         )
@@ -104,29 +102,86 @@ server <- function(input, output, session) {
   
   observeEvent(input$generate_button, {
     if ("seqnet" %in% input$tool_choice) {
-      p <- 100  # Number of nodes (genes) in the network.
-      n <- 100  # Number of samples to generate.
-      network <- random_network(p)  # Create a random network of size p.
-      network <- gen_partial_correlations(network)  # Generate weights.
-      df_ref <- SeqNet::reference$rnaseq  # The reference dataset
-      
+      # Generate a random network
+      p <- 100
+      n <- 100
+      network <- random_network(p)
+      network <- gen_partial_correlations(network)
       g(network)  # Assign the generated network to the 'g' object
       
+      # Create nodes_df with a full_label column for concatenated labels
+      nodes_df <- data.frame(id = 1:length(network$node_names), 
+                             label = paste( 1:length(network$node_names)),
+                             name = paste0(network$node_names), 
+                             color = "orange", 
+                             size = 30, 
+                             value = runif(length(network$node_names)))
+      
+      # Create edges_df
+      edges_list <- lapply(network$modules, function(module) {
+        edges_df <- as.data.frame(module$edges[, 1:2])
+        colnames(edges_df) <- c("from", "to")
+        edges_df$color <- "grey"
+        return(edges_df)
+      })
+      edges_df <- do.call(rbind, edges_list)
+      
+      # Filter nodes with no edges
+      nodes_with_edges <- unique(c(edges_df$from, edges_df$to))
+      nodes_df <- nodes_df[nodes_df$id %in% nodes_with_edges, ]
+      
+      
+      
+      observeEvent(input$interactive_graph_nodes, {
+        print(input$interactive_graph_nodes$nodes)
+        if(!identical(input$interactive_graph_nodes$nodes, list())) {
+          clicked_node <- input$interactive_graph_nodes$nodes[1]
+          list_length <- length(input$interactive_graph_nodes$edges)
+          showModal(modalDialog(
+            title = "Node Information",
+            paste("Clicked Node:", clicked_node, 
+                  "\nConnected Nodes:", list_length)
+          ))
+        }
+      }, ignoreNULL = TRUE)
+      
+      # Render visNetwork
+      print(nodes_df$label)
+      
+      
       if (input$num_files == "one") {
-        output$seqnet_network_plot <- renderPlot({
+        output$seqnet_network_plot <- renderVisNetwork({
           if (!is.null(g())) {
-            plot(g(), layout = layout_with_fr)
+            visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visEvents(click = "function(nodes){
+        Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+      }")
           }
         })
       } else if (input$num_files == "two") {
-        output$seqnet_network_plot_1 <- renderPlot({
+        output$seqnet_network_plot_1 <- renderVisNetwork({
           if (!is.null(g())) {
-            plot(g(), layout = layout_with_fr)
+            visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visEvents(click = "function(nodes){
+        Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+      }")
           }
         })
-        output$seqnet_network_plot_2 <- renderPlot({
+        output$seqnet_network_plot_2 <- renderVisNetwork({
           if (!is.null(g())) {
-            plot(g(), layout = layout_with_fr)
+            visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visEvents(click = "function(nodes){
+        Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+      }")
           }
         })
       }
@@ -389,5 +444,288 @@ server <- function(input, output, session) {
       }
     }
   })
+  ##Database connection,login,register
+  
+  user_con <- dbConnect(RMySQL::MySQL(),
+                        dbname = "login",
+                        host = "login-grnvtools.cs2w1zfwm4d4.eu-north-1.rds.amazonaws.com",
+                        port = 3306,
+                        user = "admin",
+                        password = "rS268043!")
+  
+  
+  # Create a new table if it doesn't exist
+  dbExecute(user_con, "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TINYTEXT , password_hash TEXT)")
+  
+  user_info <- reactiveValues(id = NULL, username = NULL)
+  
+  user_logged_in <- reactive({
+    !is.null(user_info$id)
+  })
+  
+  # Define an observer to handle login attempts
+  observeEvent(input$login, {
+    # Check if the input values are not empty
+    if (input$username == "" || input$password == "") {
+      # If either input value is empty, show an error message
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter your username and password.",
+          easyClose = TRUE
+        )
+      )
+      
+    } else {
+      # Check if the credentials match a user in the database
+      query <- sprintf("SELECT * FROM users WHERE username = '%s'", input$username)
+      result <- dbGetQuery(user_con, query)
+      input_password <- charToRaw(input$password)
+      input_username <- charToRaw(input$username)
+      database_username <- charToRaw(result$username)
+      if (nrow(result) == 1 && !is.na(result$password_hash) && digest(input$password, algo = "sha256") == result$password_hash && (database_username == input_username)) {
+        # If the credentials are valid, store the user ID and username in the reactive values
+        user_info$id <- result$id
+        user_info$username <- input$username
+        ##edited
+        
+        
+        # Show a welcome message in a modal dialog
+        showModal(
+          modalDialog(
+            title = "Welcome",
+            paste0("Welcome, ", user_info$username, "!, proceed to visualize GRN starting from Data tab "),
+            easyClose = TRUE
+          )
+        )
+        shinyjs::show("logout")
+        shinyjs::show("data_menu")
+        shinyjs::show("tools_menu")
+        shinyjs::show("network_menu")
+        shinyjs::show("download_menu")
+        shinyjs::hide("login_button")
+        shinyjs::hide("register_button")
+        shinyjs::hide("register_menu")
+        shinyjs::hide("login_menu")
+        
+      } else {
+        # If the credentials are invalid, show an error message
+        showModal(
+          modalDialog(
+            title = "Error",
+            "Invalid username or password.",
+            easyClose = TRUE
+          )
+        )
+      }
+      
+      # Reset the login form
+      updateTextInput(session, "username", value = "")
+      updateTextInput(session, "password", value = "")
+    }
+  })##observe login attempts
+  
+  
+  # Define an observer to handle registration attempts
+  observeEvent(input$register, {
+    length_username <- nchar(input$new_username)
+    length_password <- nchar(input$new_password)
+    special_char <- input$new_password
+    capital_letter <- input$new_password
+    special_char_count <- nchar(gsub("[[:alnum:]\\s]", "", special_char))
+    
+    # Check if the input values are not empty
+    if (input$new_username == "" || input$new_password == "" || input$confirm_password == "") {
+      # If any input values are empty, show an error message
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a username and password, and confirm your password.",
+          easyClose = TRUE
+        )
+      )
+      
+    }
+    
+    ##Adding password and username being 8 characters long
+    
+    else if (length_username <8 || length_password < 8) {
+      # If any input values are less than 8 characters show error message
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a username and password that are at least 8 characters long",
+          easyClose = TRUE
+        )
+      )
+      
+    }
+    
+    ##Adding passwords having special characters (at least 2)
+    
+    else if (special_char_count < 2) {
+      
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a password that has at least 2 special character.",
+          easyClose = TRUE
+        )
+      )
+      
+    } 
+    
+    else if(!grepl("[A-Z]", capital_letter)){
+      
+      showModal(
+        modalDialog(
+          title = "Error",
+          "Please enter a password that has at least 1 capital letter.",
+          easyClose = TRUE
+        )
+      )
+      
+    }
+    
+    
+    
+    else {
+      # Check if the new username is available
+      query <- sprintf("SELECT COUNT(*) FROM users WHERE username = '%s'", input$new_username)
+      result <- dbGetQuery(user_con, query)
+      
+      if (result[[1]] != 0) {
+        # If the new username is already taken, show an error message
+        showModal(
+          modalDialog(
+            title = "Error",
+            "Username is already taken.",
+            easyClose = TRUE
+          )
+        )
+        
+      } else if (input$new_password != input$confirm_password) {
+        # If the passwords do not match, show an error message
+        showModal(
+          modalDialog(
+            title = "Error",
+            "Passwords do not match.",
+            easyClose = TRUE
+          )
+        )
+        
+      } else {
+        # If the new username is available and passwords match, add the user to the database
+        password_hash <- digest(input$new_password, algo = "sha256")
+        query <- sprintf("INSERT INTO users (username, password_hash) VALUES ('%s', '%s')", input$new_username, password_hash)
+        dbExecute(user_con, query)
+        
+        # Log in the user automatically after registration
+        user_info$id <- dbGetQuery(user_con, paste0("SELECT id FROM users WHERE username = '", input$new_username, "'"))$id
+        user_info$username <- input$new_username
+        
+        
+        
+        
+        showModal(
+          modalDialog(
+            title = "Welcome",
+            paste0("Welcome, ", user_info$username, "!, proceed to visualize GRN starting from Data tab."),
+            easyClose = TRUE
+          )
+        )
+        
+        
+        ##Hide/show test later
+        
+        
+        # Reset the registration form
+        updateTextInput(session, "new_username", value = "")
+        updateTextInput(session, "new_password", value = "")
+        updateTextInput(session, "confirm_password", value = "")
+        
+        
+      }
+    }
+  }) #Observe register attempts
+  
+  
+  # Clear the user info from the reactive values
+  observeEvent(input$logout, {
+    
+    
+    user_info$id <- NULL
+    user_info$username <- NULL
+    
+    ##adding message
+    showModal(
+      modalDialog(
+        title = "Thank you for using GRNVtool!",
+        paste0("Thank you", user_info$username, "!"),
+        easyClose = TRUE
+      )
+    )
+    
+    
+    shinyjs::runjs("setTimeout(function() { window.location.href = '/' }, 2000);")
+    
+    
+    
+    # Reset the login and registration form (comment for now)
+    updateTextInput(session, "username", value = "")
+    updateTextInput(session, "password", value = "")
+    updateTextInput(session, "new_username", value = "")
+    updateTextInput(session, "new_password", value = "")
+    updateTextInput(session, "confirm_password", value = "")
+    
+  })
+  
+  ##redirect test 
+  
+  
+  
+  observe({
+    if (user_logged_in()) {
+      
+      shinyjs::hide("login_button")
+      shinyjs::hide("register_button")
+      shinyjs::hide("login_menu")
+      shinyjs::hide("register_menu")
+      shinyjs::show("logout")
+      shinyjs::show("data_item")
+      shinyjs::show("data_menu")
+      shinyjs::show("tools_item")
+      shinyjs::show("network_item")
+      shinyjs::show("download_item")
+      shinyjs::show("tools_menu")
+      shinyjs::show("logout_button")
+      
+      shinyjs::show("network_menu")
+      shinyjs::show("download_menu")
+    } else{
+      
+      
+      shinyjs::show("login_button")
+      shinyjs::show("register_button")
+      
+      shinyjs::hide("logout")
+      shinyjs::hide("data_menu")
+      shinyjs::hide("tools_menu")
+      shinyjs::hide("network_menu")
+      shinyjs::hide("download_menu")
+      
+      
+      
+    }
+    
+  })
+  
+  ## Disconnect from the user database when the app is closed
+  session$onSessionEnded(function() {
+    dbDisconnect(user_con)
+  })  ##end of login and register codes
+  
+  
+  
   
 }
