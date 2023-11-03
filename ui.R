@@ -8,11 +8,7 @@
 #
 
 
-library(shiny)
-library(shinydashboard)
-library(SeqNet)
-library(igraph)
-library(readr)
+
 
 
 ui <- dashboardPage(
@@ -23,31 +19,78 @@ ui <- dashboardPage(
       style = "display: flex; align-items: center; justify-content: center;"
     ),
     titleWidth = 300,
+    # Add the Log Out button to the header
     tags$li(
-      style = "position: absolute; top = 10px; right = 10px;", class = "dropdown",
-      actionButton("logout", "Log Out", icon = icon("sign-out"))
+      style = "position: absolute; top: 10px; right: 10px;", class = "dropdown",
+      hidden(
+        div(id = "logout_button",
+            actionButton("logout", "Log Out", icon = icon("sign-out"))
+        )
+      )
     )
   ),
+  
   
   dashboardSidebar(
+    useShinyjs(),
     sidebarMenu(
       menuItem("Home", tabName = "home", icon = icon("home")),
-      menuItem("Data", tabName = "data", icon = icon("database"),
-               menuSubItem("Upload Data", tabName = "upload_data"),
-               menuSubItem("Normalize Data", tabName = "normalize"),
-               menuSubItem("Exploratory Expression", tabName = "eda"),
-               menuSubItem("Expression based clustering", tabName = "ebc")
+      
+      div(id = "register_menu", 
+          menuItem("Register", tabName = "register", icon = icon("user-plus"))),
+      br(),
+      
+      div(id = "login_menu",
+          menuItem("Log in", tabName = "log_in", icon = icon("sign-in"))),
+      br(),
+      # Data menu item
+      
+      div(id = "data_menu",
+          hidden(
+            div(id = "data_item",
+                menuItem("Data", tabName = "data", icon = icon("database"),
+                         menuSubItem("Upload Data", tabName = "upload_data"),
+                         menuSubItem("Normalize Data", tabName = "normalize"),
+                         menuSubItem("Differential Expression", tabName = "de"),
+                         menuSubItem("Expression based clustering", tabName = "ebc")
+                )
+            )
+          )
       ),
-      menuItem("Tools", tabName = "tools", icon = icon("wrench"),
-               uiOutput("tool_input")
-      ),
-      menuItem("Generate Network", tabName = "generate_network", icon = icon("sitemap")),
-      menuItem("Download", tabName = "download", icon = icon("download")),
-      menuItem("Log in", tabName = "log_in", icon = icon("sign-in")),
-      menuItem("Register", tabName = "register", icon = icon("user-plus"))
+      br(),
+      # Tools menu item
+      div(id = "tools_menu",
+          hidden(
+            div(id = "tools_item",
+                menuItem("Tools", tabName = "tools", icon = icon("wrench"))
+            )
+          ),
+          uiOutput("tool_input")
+      ), #ADDED
+      br(),
+      # Generate Network menu item
+      div(id = "network_menu",
+          hidden(
+            div(id = "network_item",
+                menuItem("Generate Network", tabName = "generate_network", icon = icon("sitemap"))
+            )
+          )
+      )
+      ,
+      br(),
+      div(id = "download_menu",
+          hidden(
+            div(id = "download_item",
+                menuItem("Download", tabName = "download", icon = icon("download"))
+            )
+          )
+      )
+      
+      
+      
+      
     )
   ),
-  
   dashboardBody(
     tabItems(
       tabItem(tabName = "home",
@@ -189,31 +232,37 @@ ui <- dashboardPage(
               
       ),
       
-      tabItem(tabName = "log_in",
+      tabItem(tabName = "log_in",  ##changed name here
               h2("Log in"),
-              div(
-                id = "login_button",
-                textInput("username", "Username"),
-                passwordInput("password", "Password"),
-                br(),
-                actionButton("login", "Log In")
-              )
+              
+              
+              div(id = "login_button", 
+                  
+                  textInput("username", "Username"),
+                  passwordInput("password", "Password"),
+                  br(),
+                  actionButton("login", "Log In") )
+              
       ),
-      
       tabItem(tabName = "register",
               h2("Register an Account"),
-              div(
-                id = "register_button",
-                tags$p("Don't have an account? Register below."), 
-                textInput("new_username", "New Username"),
-                passwordInput("new_password", "New Password"),
-                passwordInput("confirm_password", "Confirm Password"),
-                actionButton("register", "Register")
-              )
-      )
-    )
+              
+              div(id = "register_button",
+                  tags$p("Don't have an account? Register below."), 
+                  tags$p("Make sure your username is 8 characters long, your password is 8 characters long at least, has 2 special characters at least, and 1 capital letter at least.", style="color:#FF0000"),
+                  
+                  textInput("new_username", "New Username"),
+                  passwordInput("new_password", "New Password"),
+                  passwordInput("confirm_password", "Confirm Password"),
+                  actionButton("register", "Register")
+              )  
+              
+              
+      ))
   )
 )
 
 # ... (Previous code)
+
+
 
