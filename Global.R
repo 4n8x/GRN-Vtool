@@ -28,3 +28,6 @@ library(conflicted)
 conflicts_prefer(shinydashboard::box)
 conflicts_prefer(RSQLite::show)
 library(shinyauthr)
+library(edgeR)
+library(visNetwork)
+
