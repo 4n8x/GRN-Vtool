@@ -51,7 +51,7 @@ ui <- dashboardPage(
                 menuItem("Data", tabName = "data", icon = icon("database"),
                          menuSubItem("Upload Data", tabName = "upload_data"),
                          menuSubItem("Normalize Data", tabName = "normalize"),
-                         menuSubItem("Differential Expression", tabName = "de"),
+                         menuSubItem("Differential Expression", tabName = "eda"),
                          menuSubItem("Expression based clustering", tabName = "ebc")
                 )
             )
@@ -103,8 +103,8 @@ ui <- dashboardPage(
               h2("Upload Data"),
               p("Upload your data files here:"),
               radioButtons("num_files", label = "Number of Files:",
-                           choices = list("One File" = "one", "Two Files" = "two"), 
-                           selected = "one"),
+                           choices = list("Zero File"="zero","One File" = "one", "Two Files" = "two"), 
+                           selected = "zero"),
               conditionalPanel(
                 condition = "input.num_files == 'one'",
                 fileInput("data_file1", "Upload Data File", accept = c(".csv"))
@@ -120,70 +120,40 @@ ui <- dashboardPage(
               h2("Normalize Data"),
               actionButton("norm_button", label = "Normalize", 
                            icon = icon("sitemap"), 
-                           style = "background-color: purple; color: white")
-              
-              ,
+                           style = "background-color: purple; color: white"),
               box(
-                
-                title = "normalized data",
+                title = "Normalized Data",
                 status = "primary",
                 solidHeader = TRUE,
-                width = 20,
-                
+                width = 12,
                 fluidRow(
-                  column(width = 6,  # Specify the width for the first cell (e.g., 50%)
-                         plotOutput("norm_plot")  # Plot output for the first cell
+                  column(width = 6,
+                         plotOutput("norm_plot")
                   ),
-                  column(width = 6,  # Specify the width for the second cell (e.g., 50%)
-                         tableOutput("normalized_table")  # Table output for the second cell
+                  column(width = 6,
+                         tableOutput("normalized_table")
                   )
                 )
-                
               )
-              
       ),
       
       tabItem(tabName = "eda",
               h2("Exploratory Expression"),
-              conditionalPanel(
-                condition = "input.num_files == 'one'",
-                fileInput("data_file3", "Upload Data File", 
-                          accept = c(".csv", ".tsv", ".txt"))
-              ),
-              
-              
-              
-              
-              
-              actionButton("de_button", label = "differential Expression", 
+              actionButton("de_button", label = "Differential Expression", 
                            icon = icon("sitemap"), 
-                           style = "background-color: purple; color: white")
-              
-              ,
+                           style = "background-color: purple; color: white"),
               box(
-                
-                title = "differential Expression",
+                title = "Differential Expression",
                 status = "primary",
                 solidHeader = TRUE,
-                width = 20,
-                
-                fluidRow(
-                  splitLayout(cellWidths = c("100%"),plotOutput("de_plot")
-                              
-                              
-                  )
-                  
-                )
+                width = 12,
+                plotOutput("de_plot")
               )
       ),
       tabItem(tabName = "ebc",
               h2("Expression based clustering"),
               
-              conditionalPanel(
-                condition = "input.num_files == 'one'",
-                fileInput("data_file3", "Upload Data File", 
-                          accept = c(".csv", ".tsv", ".txt"))
-              ),
+              
               actionButton("ebc_button", label = "Expression based clustering", 
                            icon = icon("sitemap"), 
                            style = "background-color: purple; color: white")
@@ -214,7 +184,7 @@ ui <- dashboardPage(
       
       tabItem(tabName = "generate_network",
               h2("Generate Network"),
-            
+              
               fluidRow(
                 column(6, uiOutput("diane_network_box")),
                 column(6, uiOutput("seqnet_network_box"))
@@ -263,6 +233,7 @@ ui <- dashboardPage(
 )
 
 # ... (Previous code)
+
 
 
 
