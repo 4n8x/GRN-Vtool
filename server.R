@@ -14,16 +14,17 @@ server <- function(input, output, session) {
   g <- reactiveVal(NULL)
   
   
+  
   # Generate tool selection input based on user choices
   output$tool_input <- renderUI({
-    if (input$num_files == "one") {
+    if (input$num_files == "one" | input$num_files == "zero") {
       checkboxGroupInput("tool_choice", label = "Choose Network Generation Tool:",
                          choices = list("DIANE" = "diane", "SeqNet" = "seqnet")
-                         )
+      )
     } else {
       radioButtons("tool_choice", label = "Choose Network Generation Tool:",
                    choices = list("DIANE" = "diane", "SeqNet" = "seqnet")
-                   )
+      )
     }
   })
   
@@ -102,240 +103,192 @@ server <- function(input, output, session) {
   
   observeEvent(input$generate_button, {
     if ("seqnet" %in% input$tool_choice) {
-      # Generate a random network
-      p <- 100
-      n <- 100
-      network <- random_network(p)
-      network <- gen_partial_correlations(network)
-      g(network)  # Assign the generated network to the 'g' object
-      
-      # Create nodes_df with a full_label column for concatenated labels
-      nodes_df <- data.frame(id = 1:length(network$node_names), 
-                             label = paste( 1:length(network$node_names)),
-                             name = paste0(network$node_names), 
-                             color = "orange", 
-                             size = 30, 
-                             value = runif(length(network$node_names)))
-      
-      # Create edges_df
-      edges_list <- lapply(network$modules, function(module) {
-        edges_df <- as.data.frame(module$edges[, 1:2])
-        colnames(edges_df) <- c("from", "to")
+      if (input$num_files == "one" | input$num_files == "two") {
+        data("abiotic_stresses")
+        edges <- abiotic_stresses$heat_DEGs_regulatory_links 
+        # Get the row names of the matrix 'edges'
+        edges <- edges[-(19:25), ]
+        
+        row_names <- rownames(edges)
+        
+        # Print the row names
+        print(row_names)
+        column_names <- colnames(edges)
+        
+        # Print the column names
+        print(column_names)
+        common_genes <- intersect(row_names, column_names)
+        
+        edges <- edges[common_genes, common_genes]
+        row_names2 <- rownames(edges)
+        
+        # Print the row names
+        print(row_names2)
+        column_names2 <- colnames(edges)
+        
+        # Print the column names
+        print(column_names2)
+        symmetric_edges <- pmax(edges, t(edges))
+        
+        threshold <- 0  # setting threshold
+        binary_edges <- ifelse(symmetric_edges > threshold, 1, 0)
+        
+        # create the network with the adjacency matrix
+        nw <- create_network_from_adjacency_matrix(binary_edges)
+        
+        
+        nodes_df <- data.frame(
+          id = nw$node_names,  # row names from matrix
+          label = nw$node_names,
+          name = nw$node_names,
+          color = "orange",  # Assigns a default color to each node
+          size = 30,  # Assigns a default size to each node
+          value = runif(nrow(binary_edges))  # Assigns a random value to each node for now
+        )
+        
+        # Create edges_df
+        # create a data frame from the matrix where each '1' represents an edge
+        edges_data <- nw$modules[[1]]$edges
+        
+        # If the edges are in a matrix form where each row represents an edge and the first two columns
+        # are the indices of the connected nodes,converting it to a data frame:
+        edges_df <- data.frame(
+          from = edges_data[, 1],
+          to = edges_data[, 2]
+        )
+        
+        # if there are corresponding node names, it can map them
+        edges_df$from <- nw$node_names[edges_df$from]
+        edges_df$to <- nw$node_names[edges_df$to]
+        
+        # Add a color attribute to edges
         edges_df$color <- "grey"
-        return(edges_df)
-      })
-      edges_df <- do.call(rbind, edges_list)
-      
-      # Filter nodes with no edges
-      nodes_with_edges <- unique(c(edges_df$from, edges_df$to))
-      nodes_df <- nodes_df[nodes_df$id %in% nodes_with_edges, ]
-      
-      
-      
-      observeEvent(input$interactive_graph_nodes, {
-        print(input$interactive_graph_nodes$nodes)
-        if(!identical(input$interactive_graph_nodes$nodes, list())) {
-          clicked_node <- input$interactive_graph_nodes$nodes[1]
-          list_length <- length(input$interactive_graph_nodes$edges)
-          showModal(modalDialog(
-            title = "Node Information",
-            paste("Clicked Node:", clicked_node, 
-                  "\nConnected Nodes:", list_length)
-          ))
+        get_connected_nodes <- function(clicked_node, edges_df) {
+          # Find rows in edges_df where the clicked node is either 'from' or 'to'
+          connected <- subset(edges_df, from == clicked_node | to == clicked_node)
+          # Return the unique node names connected to the clicked node
+          unique(c(connected$from, connected$to))
         }
-      }, ignoreNULL = TRUE)
-      
-      # Render visNetwork
-      print(nodes_df$label)
-      
-      
-      if (input$num_files == "one") {
+        
+        observeEvent(input$interactive_graph_nodes, {
+          if(!identical(input$interactive_graph_nodes$nodes, list())) {
+            clicked_node <- input$interactive_graph_nodes$nodes[1]
+            
+            connected_nodes_node <- get_connected_nodes(clicked_node, edges_df)
+            
+            showModal(modalDialog(
+              title = "Node Information",
+              paste("Clicked Node:", clicked_node, 
+                    "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
+            ))
+          }
+        }, ignoreNULL = TRUE)
         output$seqnet_network_plot <- renderVisNetwork({
-          if (!is.null(g())) {
-            visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
-              visIgraphLayout() %>%
-              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
-              visInteraction(dragNodes = TRUE) %>%
-              visEvents(click = "function(nodes){
-        Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
-      }")
-          }
+          visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
+            visIgraphLayout() %>%
+            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+            visInteraction(dragNodes = TRUE) %>%
+            visEvents(click = "function(nodes){
+    Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+  }")
         })
-      } else if (input$num_files == "two") {
-        output$seqnet_network_plot_1 <- renderVisNetwork({
-          if (!is.null(g())) {
-            visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
-              visIgraphLayout() %>%
-              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
-              visInteraction(dragNodes = TRUE) %>%
-              visEvents(click = "function(nodes){
-        Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
-      }")
-          }
-        })
-        output$seqnet_network_plot_2 <- renderVisNetwork({
-          if (!is.null(g())) {
-            visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
-              visIgraphLayout() %>%
-              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
-              visInteraction(dragNodes = TRUE) %>%
-              visEvents(click = "function(nodes){
-        Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
-      }")
-          }
-        })
+        shinyjs::hide("generate_button")
       }
     }
   })
+  
   
   #DIANE code
   
   
   observeEvent(input$norm_button, {
-    
-    
-    
-    data1<<-read_csv(input$data_file1$datapath ,show_col_types = FALSE)
-    
-    data1<<-as.data.frame(data1)
-    sapply(data1,class)
-    
-    
-    data("abiotic_stresses")
-    data("gene_annotations")
-    data("regulators_per_organism")
-    
-    
-    DIANE::draw_distributions(abiotic_stresses$raw_counts, boxplot = TRUE)
-    #normalization using the defult paramaters
-    tcc_object <<- DIANE::normalize(abiotic_stresses$raw_counts, norm_method = 'tmm', iteration = FALSE)
-    
-    #Low counts removal (allow only genes with more than 10 counts per sample in average)
-    
-    threshold = 10*length(abiotic_stresses$conditions)
-    tcc_object <<- DIANE::filter_low_counts(tcc_object, threshold)
-    normalized_counts <<- TCC::getNormalizedData(tcc_object)
-    
-    
-    output$norm_plot<<-renderPlot({plot(tcc_object)})
-    #--------------------------------------------------
-    data <- reactive({
-      req(input$data_file1)
-      raw_data <- read.csv(input$data_file1$datapath, row.names = 1, header = TRUE, sep = ",")
-      return(raw_data)
-    })
-    
-    normalized_data <- eventReactive(input$norm_button, {
-      # Load data
-      counts <- data()
-      
-      # Perform normalization using edgeR's TMM (Trimmed Mean of M-values) method
-      normalized_counts <- calcNormFactors(counts)
-      
-      return(normalized_counts)
-    })
-    output$normalized_table <- renderTable({
-      # Display the normalized data in a table format
-      # Use 'normalized_data()' to access the normalized data
-      normalized_data()
-    })
-    
-    
-    
-    
-  })
-  observeEvent(input$de_button, {
-    if ("diane" %in% input$tool_choice) {
-      
+    # Load the data directly from the SeqNet package
+    if (input$num_files == "one" | input$num_files == "two") {
+      print("norm")
       data("abiotic_stresses")
-      data("gene_annotations")
-      data("regulators_per_organism")
+      tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
+                                     iteration = FALSE)
+      # Extract the normalized counts from the tcc_object
+      normalized_counts <- TCC::getNormalizedData(tcc_object)
       
-      #Differential expression analysis
-      fit <<- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
-      #> Warning in edgeR::DGEList(counts = tcc$count, lib.size = tcc$norm.factors, :
-      #> norm factors don't multiply to 1
-      
-      
-      
-      topTags <<- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 0.01, lfc = 2)
-      
-      # adding annotations
-      DEgenes <<- topTags$table
-      DEgenes[,c("name", "description")] <- gene_annotations$`Arabidopsis thaliana`[
-        match(get_locus(DEgenes$genes, unique = FALSE), rownames(gene_annotations$`Arabidopsis thaliana`)),
-        c("label", "description")]
-      
-      knitr::kable(head(DEgenes, n = 10))
-      
-      #Network inference
-      #Regulators for your organism
-      aggregated_data <<- aggregate_splice_variants(data = normalized_counts)
-      
-      #Grouping highly correlated regulators
-      
-      genes <<- get_locus(topTags$table$genes)
-      regressors <<- intersect(genes, regulators_per_organism[["Arabidopsis thaliana"]])
-      
-      # use normalized counts if you did not aggregate splice variants
-      grouping <- DIANE::group_regressors(aggregated_data, genes, regressors)
-      #> [1] "adding tf  AT1G74890  to group  2 because correlation of -0.912173913043478 to mean"
-      #> [1] 19
-      #> [1] "adding tf  AT5G59570  to group  4 because correlation of -0.919130434782609 to mean"
-      #> [1] 18
-      
-      grouped_counts <<- grouping$counts
-      
-      grouped_targets <<- grouping$grouped_genes
-      
-      grouped_regressors <<- grouping$grouped_regressors
-      
-      
-      genes <<- topTags$table$genes
-      
-      tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
-      
-      
-      output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags)})
-      
-      
-      
-      
+      # Output the normalized data to a table in the UI
+      output$norm_plot<<-renderPlot({plot(tcc_object)})
     }
   })
   
+  observeEvent(input$de_button, {
+    if ("diane" %in% input$tool_choice) {
+      if (input$num_files == "one"| input$num_files == "two") {
+        # Load the data directly from the SeqNet package
+        data("abiotic_stresses")
+        tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
+                                       iteration = FALSE)
+        tcc_object <- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
+        fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
+        print("fit done")
+        
+        tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
+        print("tags done")
+        
+        output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})
+      }
+      
+    }
+    else if ("seqnet" %in% input$tool_choice) {
+      if (input$num_files == "one" | input$num_files == "two") {
+        data("abiotic_stresses")
+        tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
+                                       iteration = FALSE)
+        tcc_object <- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
+        fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
+        print("fit done")
+        
+        tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
+        print("tags done")
+        
+        output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})
+        
+      }
+    }
+  })
   observeEvent(input$ebc_button, {
     if ("diane" %in% input$tool_choice) {
+      if (input$num_files == "one" | input$num_files == "two") {
+        data("abiotic_stresses")
+        genes <- abiotic_stresses$heat_DEGs
+        clustering <- run_coseq(conds = unique(abiotic_stresses$conditions), 
+                                data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
+        
+        #> ****************************************
+        #> coseq analysis: Normal approach & arcsin transformation
+        #> K = 6 to 9 
+        #> Use seed argument in coseq for reproducible results.
+        #> ****************************************
+        
+        print("clustering done")
+        output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
+        
+      }
       
-      
-      #Expression based clustering
-      genes <- topTags$table$genes
-      
-      clustering <- DIANE::run_coseq(conds = unique(abiotic_stresses$conditions), data = normalized_counts, 
-                                     genes = genes, K = 6:9, transfo = "arcsin", model = "Normal", seed = 123)
-      #> ****************************************
-      #> coseq analysis: Normal approach & arcsin transformation
-      #> K = 6 to 9 
-      #> Use seed argument in coseq for reproducible results.
-      #> ****************************************
-      
-      
-      
-      
-      
-      
-      
-      
-      output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data = normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    }
+    else if ("seqnet" %in% input$tool_choice) {
+      if (input$num_files == "one" | input$num_files == "two") {
+        data("abiotic_stresses")
+        genes <- abiotic_stresses$heat_DEGs
+        clustering <- run_coseq(conds = unique(abiotic_stresses$conditions), 
+                                data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
+        
+        #> ****************************************
+        #> coseq analysis: Normal approach & arcsin transformation
+        #> K = 6 to 9 
+        #> Use seed argument in coseq for reproducible results.
+        #> ****************************************
+        
+        print("clustering done")
+        output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
+        
+        
+      }
     }
   })
   
