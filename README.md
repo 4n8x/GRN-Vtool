@@ -24,11 +24,12 @@ DIANE is an R package, is a simple exploratory visualization, that allows the us
 #### You can use Two tools on the Website to generate your network [SeqNet](https://github.com/tgrimes/SeqNet),[DIANE](https://github.com/OceaneCsn/DIANE).
 
 
-### Lunching instructions
+### Launching instructions
 You can use GRN-Vtool by entering the website and following the steps:
-- Upload your normalized dataset from Data Tab>Upload Data
-- Choose your appropriate tool to use for generating the network from the Tools Tab
-- Generate the network from Generate Network Tab
-- You can download the output from your local machine
-- You can register to save your generated networks for further usage 
+- Register an account in our wesbite to login.
+- Upload your Dataset from Data Tab > Upload Data.
+- Perform Normalization, Differential Expression, Clustering if needed.
+- Generate the network from Generate Network Tab after choosing a tool (SeqNet or DIANE).
+- You can download the results to your local machine as csv format.
+
  
