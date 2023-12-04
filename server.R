@@ -13,8 +13,37 @@ server <- function(input, output, session) {
   # Initialize an empty igraph graph object
   g <- reactiveVal(NULL)
   
+  fileUploaded <- reactive({
+    !is.null(input$data_file1) || !is.null(input$data_file2)
+  })
+  
+  # Create an output to enable conditional panels
+  output$fileUploaded <- reactive({
+    fileUploaded()
+  })
+  outputOptions(output, "fileUploaded", suspendWhenHidden = FALSE)
   
   
+  output$download_data <- downloadHandler(
+    filename = function() {
+      paste("abiotic_stresses", Sys.Date(), ".csv", sep = "")
+    },
+    content = function(file) {
+      # Choose the part of abiotic_stresses you want to download. For example:
+      # If you want to download 'raw_counts'
+      data_to_download <- abiotic_stresses$raw_counts
+      
+      # Or, if you want to download 'normalized_counts'
+      # data_to_download <- abiotic_stresses$normalized_counts
+      
+      # Ensure the data is in a consistent format (data frame)
+      if (is.data.frame(data_to_download)) {
+        write.csv(data_to_download, file, row.names = FALSE)
+      } else {
+        stop("Selected data is not a data frame")
+      }
+    }
+  )
   # Generate tool selection input based on user choices
   output$tool_input <- renderUI({
     if (input$num_files == "one" | input$num_files == "zero") {
@@ -65,6 +94,7 @@ server <- function(input, output, session) {
   })
   
   output$seqnet_network_box <- renderUI({
+    print("SeqNet option selected")
     if ("seqnet" %in% input$tool_choice) {
       if (input$num_files == "one") {
         box(
@@ -98,12 +128,222 @@ server <- function(input, output, session) {
     }
   })
   
+  nodes_df_reactive <- reactiveVal()
+  edges_df_reactive <- reactiveVal()
   
+  
+  
+  #DIANE code
+  
+  
+  observeEvent(input$norm_button, {
+    # Load the data directly from the SeqNet package
+    if (fileUploaded()) {
+      print("norm")
+      data("abiotic_stresses")
+      tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
+                                     iteration = FALSE)
+      # Extract the normalized counts from the tcc_object
+      normalized_counts <- TCC::getNormalizedData(tcc_object)
+      
+      # Output the normalized data to a table in the UI
+      output$norm_plot<<-renderPlot({plot(tcc_object)})
+    }
+    else{
+      showModal(modalDialog(
+        title = "Warning",
+        "Please upload a file before normalizing data."
+      ))
+    }
+  })
+  
+  observeEvent(input$de_button, {
+    if (fileUploaded()) {
+      if (input$num_files == "one"| input$num_files == "two") {
+        print("differential started")
+        # Load the data directly from the SeqNet package
+        data("abiotic_stresses")
+        tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
+                                       iteration = FALSE)
+        tcc_object <- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
+        fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
+        print("fit done")
+        
+        tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
+        print("tags done")
+        
+        output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})
+      }
+      
+    }
+    else{
+      showModal(modalDialog(
+        title = "Warning",
+        "Please upload a file before generating Differential Expression."
+      ))
+    }
+  })
+  observeEvent(input$ebc_button, {
+    if (fileUploaded()) {
+      print("clustering started")
+      if (input$num_files == "one" | input$num_files == "two") {
+        data("abiotic_stresses")
+        genes <- abiotic_stresses$heat_DEGs
+        clustering <- run_coseq(conds = unique(abiotic_stresses$conditions), 
+                                data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
+        
+        #> ****************************************
+        #> coseq analysis: Normal approach & arcsin transformation
+        #> K = 6 to 9 
+        #> Use seed argument in coseq for reproducible results.
+        #> ****************************************
+        
+        print("clustering done")
+        output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
+        
+      }
+      
+    }
+    else{
+      showModal(modalDialog(
+        title = "Warning",
+        "Please upload a file before clustering data."
+      ))
+    }
+    
+  })
+  #> idhar hai network
+  
+  observeEvent(input$generate_button, {
+    if (is.null(input$tool_choice)) {
+      showModal(modalDialog(
+        title = "Tool Selection Required",
+        "Please select a network generation tool from the Tools menu."
+      ))
+    }
+  })
+  
+  # For some specific action in your app
+  observeEvent(input$some_action_button, {
+    if (!is.null(input$some_required_input)) {
+      # Proceed with the action
+    } else {
+      showModal(modalDialog(
+        title = "Missing Information",
+        "Please provide all the required information before proceeding."
+      ))
+    }
+  })
   
   
   observeEvent(input$generate_button, {
-    if ("seqnet" %in% input$tool_choice) {
-      if (input$num_files == "one" | input$num_files == "two") {
+    if ("diane" %in% input$tool_choice) {
+      if (fileUploaded()) {
+        
+        data("abiotic_stresses")
+        edges <- abiotic_stresses$heat_DEGs_regulatory_links 
+        # Get the row names of the matrix 'edges'
+        edges <- edges[-(19:25), ]
+        
+        row_names <- rownames(edges)
+        
+        # Print the row names
+        #print(row_names)
+        column_names <- colnames(edges)
+        
+        # Print the column names
+        #print(column_names)
+        common_genes <- intersect(row_names, column_names)
+        
+        edges <- edges[common_genes, common_genes]
+        row_names2 <- rownames(edges)
+        
+        # Print the row names
+        #print(row_names2)
+        column_names2 <- colnames(edges)
+        
+        # Print the column names
+        #print(column_names2)
+        symmetric_edges <- pmax(edges, t(edges))
+        
+        threshold <- 0  # setting threshold
+        binary_edges <- ifelse(symmetric_edges > threshold, 1, 0)
+        
+        # create the network with the adjacency matrix
+        nw <- create_network_from_adjacency_matrix(binary_edges)
+        
+        
+        nodes_df <- data.frame(
+          id = nw$node_names,  # row names from matrix
+          label = nw$node_names,
+          name = nw$node_names,
+          color = "orange",  # Assigns a default color to each node
+          size = 30,  # Assigns a default size to each node
+          value = runif(nrow(binary_edges))  # Assigns a random value to each node for now
+        )
+        
+        nodes_df_reactive(nodes_df)
+        
+        # Create edges_df
+        # create a data frame from the matrix where each '1' represents an edge
+        edges_data <- nw$modules[[1]]$edges
+        
+        # If the edges are in a matrix form where each row represents an edge and the first two columns
+        # are the indices of the connected nodes,converting it to a data frame:
+        edges_df <- data.frame(
+          from = edges_data[, 1],
+          to = edges_data[, 2]
+        )
+        
+        # if there are corresponding node names, it can map them
+        edges_df$from <- nw$node_names[edges_df$from]
+        edges_df$to <- nw$node_names[edges_df$to]
+        
+        # Add a color attribute to edges
+        edges_df$color <- "grey"
+        get_connected_nodes <- function(clicked_node, edges_df) {
+          # Find rows in edges_df where the clicked node is either 'from' or 'to'
+          connected <- subset(edges_df, from == clicked_node | to == clicked_node)
+          # Return the unique node names connected to the clicked node
+          unique(c(connected$from, connected$to))
+        }
+        
+        edges_df_reactive(edges_df)
+        
+        observeEvent(input$interactive_graph_nodes, {
+          if(!identical(input$interactive_graph_nodes$nodes, list())) {
+            clicked_node <- input$interactive_graph_nodes$nodes[1]
+            
+            connected_nodes_node <- get_connected_nodes(clicked_node, edges_df)
+            
+            showModal(modalDialog(
+              title = "Node Information",
+              paste("Clicked Node:", clicked_node, 
+                    "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
+            ))
+          }
+        }, ignoreNULL = TRUE)
+        output$diane_network_plot <- renderVisNetwork({
+          visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
+            visIgraphLayout() %>%
+            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+            visInteraction(dragNodes = TRUE) %>%
+            visEvents(click = "function(nodes){
+    Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+  }")
+        })
+        # shinyjs::hide("generate_button")
+      }
+      else{
+        showModal(modalDialog(
+          title = "Warning",
+          "Please upload a file before generating network."
+        ))
+      }
+    }
+    else if ("seqnet" %in% input$tool_choice) {
+      print("SeqNet network bein generated here")
+      if (fileUploaded()) {
         data("abiotic_stresses")
         edges <- abiotic_stresses$heat_DEGs_regulatory_links 
         # Get the row names of the matrix 'edges'
@@ -146,6 +386,8 @@ server <- function(input, output, session) {
           value = runif(nrow(binary_edges))  # Assigns a random value to each node for now
         )
         
+        nodes_df_reactive(nodes_df)
+        
         # Create edges_df
         # create a data frame from the matrix where each '1' represents an edge
         edges_data <- nw$modules[[1]]$edges
@@ -169,6 +411,8 @@ server <- function(input, output, session) {
           # Return the unique node names connected to the clicked node
           unique(c(connected$from, connected$to))
         }
+        
+        edges_df_reactive(edges_df)
         
         observeEvent(input$interactive_graph_nodes, {
           if(!identical(input$interactive_graph_nodes$nodes, list())) {
@@ -194,144 +438,12 @@ server <- function(input, output, session) {
         })
         shinyjs::hide("generate_button")
       }
-    }
-  })
-  
-  
-  #DIANE code
-  
-  
-  observeEvent(input$norm_button, {
-    # Load the data directly from the SeqNet package
-    if (input$num_files == "one" | input$num_files == "two") {
-      print("norm")
-      data("abiotic_stresses")
-      tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
-                                     iteration = FALSE)
-      # Extract the normalized counts from the tcc_object
-      normalized_counts <- TCC::getNormalizedData(tcc_object)
-      
-      # Output the normalized data to a table in the UI
-      output$norm_plot<<-renderPlot({plot(tcc_object)})
-    }
-  })
-  
-  observeEvent(input$de_button, {
-    if ("diane" %in% input$tool_choice) {
-      if (input$num_files == "one"| input$num_files == "two") {
-        # Load the data directly from the SeqNet package
-        data("abiotic_stresses")
-        tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
-                                       iteration = FALSE)
-        tcc_object <- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
-        fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
-        print("fit done")
-        
-        tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
-        print("tags done")
-        
-        output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})
+      else{
+        showModal(modalDialog(
+          title = "Warning",
+          "Please upload a file before generating network."
+        ))
       }
-      
-    }
-    else if ("seqnet" %in% input$tool_choice) {
-      if (input$num_files == "one" | input$num_files == "two") {
-        data("abiotic_stresses")
-        tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
-                                       iteration = FALSE)
-        tcc_object <- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
-        fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
-        print("fit done")
-        
-        tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
-        print("tags done")
-        
-        output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})
-        
-      }
-    }
-  })
-  observeEvent(input$ebc_button, {
-    if ("diane" %in% input$tool_choice) {
-      if (input$num_files == "one" | input$num_files == "two") {
-        data("abiotic_stresses")
-        genes <- abiotic_stresses$heat_DEGs
-        clustering <- run_coseq(conds = unique(abiotic_stresses$conditions), 
-                                data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
-        
-        #> ****************************************
-        #> coseq analysis: Normal approach & arcsin transformation
-        #> K = 6 to 9 
-        #> Use seed argument in coseq for reproducible results.
-        #> ****************************************
-        
-        print("clustering done")
-        output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
-        
-      }
-      
-    }
-    else if ("seqnet" %in% input$tool_choice) {
-      if (input$num_files == "one" | input$num_files == "two") {
-        data("abiotic_stresses")
-        genes <- abiotic_stresses$heat_DEGs
-        clustering <- run_coseq(conds = unique(abiotic_stresses$conditions), 
-                                data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
-        
-        #> ****************************************
-        #> coseq analysis: Normal approach & arcsin transformation
-        #> K = 6 to 9 
-        #> Use seed argument in coseq for reproducible results.
-        #> ****************************************
-        
-        print("clustering done")
-        output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
-        
-        
-      }
-    }
-  })
-  
-  observeEvent(input$generate_button, {
-    if ("diane" %in% input$tool_choice) {
-      
-      
-      set.seed(123)
-      mat <<- DIANE::network_inference(grouped_counts, conds = abiotic_stresses$conditions, 
-                                       targets = grouped_targets, regressors = grouped_regressors, 
-                                       nCores = 1, verbose = FALSE)
-      
-      network <<- DIANE::network_thresholding(mat, n_edges = length(genes))
-      
-      data <- network_data(network, regulators_per_organism[["Arabidopsis thaliana"]], 
-                           gene_annotations$`Arabidopsis thaliana`)
-      
-      knitr::kable(head(data$nodes))
-      genes <<- topTags$table$genes
-      
-      output$eda_plot<<-renderUI( {DIANE::draw_heatmap(normalized_counts, subset = genes, 
-                                                       title = "Log expression for DE genes under heat stress")})
-      
-      #viualize
-      #(the interactive graph network will be seen here)
-      DIANE::draw_network(data$nodes, data$edges)
-      
-      nGenes = length(grouped_targets)
-      nRegulators = length(grouped_regressors)
-      
-      res <<- data.frame(density = seq(0.001, 0.1, length.out = 20),
-                         nEdges = sapply(seq(0.001, 0.1, length.out = 20),
-                                         get_nEdges, nGenes, nRegulators))
-      
-      
-      
-      
-      output$diane_network_box<<-renderUI({DIANE::draw_network(data$nodes, data$edges)})
-      
-      
-      
-      
-      
     }
   })
   
@@ -342,38 +454,93 @@ server <- function(input, output, session) {
   
   observeEvent(input$change_color, {
     if ("seqnet" %in% input$tool_choice) {
-      g_copy <- g()
-      if (!is.null(g_copy)) {
-        # Modify the plot using plot_modules
-        modified_network <- plot_modules(
-          g_copy,
-          node_scale = 4,
-          edge_scale = 1,
-          node_color = adjustcolor("orange", 0.5),
-          group_color = palette.colors(9, "Set 1"),
-          generate_layout = igraph::nicely,
-          include_vertex_labels = TRUE,
-          show_legend = FALSE,
-          legend_position = "topright",
-          legend_horizontal = FALSE,
-          display_plot = FALSE  # Don't display the plot immediately
-        )
-        
-        if (input$num_files == "one") {
-          output$seqnet_network_plot <- renderPlot({
-            print(modified_network)  # Display the modified network plot
-          })
-        } else if (input$num_files == "two") {
-          output$seqnet_network_plot_1 <- renderPlot({
-            print(modified_network)  # Display the modified network plot
-          })
-          output$seqnet_network_plot_2 <- renderPlot({
-            print(modified_network)  # Display the modified network plot
-          })
+      if (!is.null(nodes_df_reactive())) {
+        print("hiding the button")
+        shinyjs::hide("change_color")
+        shinyjs::show("revert_color")
+        updated_nodes_df <- nodes_df_reactive()
+        updated_nodes_df$color <- "red"
+        nodes_df_reactive(updated_nodes_df)
+        get_connected_nodes <- function(clicked_node, edges_df_closure) {
+          # Call the closure to get the dataframe
+          edges_df <- edges_df_closure()
+          
+          # Ensure edges_df is a dataframe
+          if (!is.data.frame(edges_df)) {
+            stop("The object returned by edges_df_closure is not a dataframe")
+          }
+          
+          # Find rows in edges_df where the clicked node is either 'from' or 'to'
+          connected <- subset(edges_df, edges_df$from == clicked_node | edges_df$to == clicked_node)
+          
+          # Print edges_df for debugging
+          # print(edges_df)
+          
+          # Define your data array
+          data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+          
+          # Return the data array
+          unique(c(connected$from, connected$to))
+          
+          
         }
+        
+        
+        
+        
+        observeEvent(input$interactive_graph_nodes, {
+          if(!identical(input$interactive_graph_nodes$nodes, list())) {
+            clicked_node <- input$interactive_graph_nodes$nodes[1]
+            
+            connected_nodes_node <- get_connected_nodes(clicked_node, edges_df_reactive)
+            
+            showModal(modalDialog(
+              title = "Node Information",
+              paste("Clicked Node:", clicked_node, 
+                    "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
+            ))
+          }
+        }, ignoreNULL = TRUE)
+        
+        output$seqnet_network_plot <- renderVisNetwork({
+          visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+            visIgraphLayout() %>%
+            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+            visInteraction(dragNodes = TRUE) %>%
+            visEvents(click = "function(nodes){
+    Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+  }")
+          
+        })
+      }
+      
+    }
+  })
+  
+  observeEvent(input$revert_color, {
+    if ("seqnet" %in% input$tool_choice) {
+      if (!is.null(nodes_df_reactive())) {
+        updated_nodes_df <- nodes_df_reactive()
+        updated_nodes_df$color <- "orange"  # Revert color to orange
+        nodes_df_reactive(updated_nodes_df)
+        shinyjs::show("change_color")
+        shinyjs::hide("revert_color")
+        
+        # Update the network plot
+        output$seqnet_network_plot <- renderVisNetwork({
+          visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+            visIgraphLayout() %>%
+            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+            visInteraction(dragNodes = TRUE) %>%
+            visEvents(click = "function(nodes){
+            Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+          }")
+        })
       }
     }
   })
+  
+  
   
   observeEvent(input$get_sigma_button, {
     if ("seqnet" %in% input$tool_choice) {
@@ -415,6 +582,8 @@ server <- function(input, output, session) {
   user_logged_in <- reactive({
     !is.null(user_info$id)
   })
+  
+  
   
   # Define an observer to handle login attempts
   observeEvent(input$login, {
