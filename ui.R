@@ -103,8 +103,8 @@ ui <- dashboardPage(
               h2("Upload Data"),
               p("Upload your data files here:"),
               radioButtons("num_files", label = "Number of Files:",
-                           choices = list("Zero File"="zero","One File" = "one", "Two Files" = "two"), 
-                           selected = "zero"),
+                           choices = list("One File" = "one", "Two Files" = "two"), 
+                           selected = "one"),
               conditionalPanel(
                 condition = "input.num_files == 'one'",
                 fileInput("data_file1", "Upload Data File", accept = c(".csv"))
@@ -114,7 +114,8 @@ ui <- dashboardPage(
                 fileInput("data_file1", "Upload Data File 1", accept = c(".csv")),
                 fileInput("data_file2", "Upload Data File 2", accept = c(".csv"))
               )
-      ),
+      )
+      ,
       
       tabItem(tabName = "normalize",
               h2("Normalize Data"),
@@ -194,13 +195,20 @@ ui <- dashboardPage(
               conditionalPanel(
                 "input.tool_choice.includes('seqnet')",
                 actionButton("get_sigma_button", "Get Sigma"),  # Add the Get Sigma button
-                actionButton("change_color", "Change Color")  # Add the Change Color button here
+                actionButton("change_color", "Change Color"),  # Add the Change Color button here
+                actionButton("revert_color", "Revert Color", class = "btn-primary", style = "display: none;")
               )
               
               
               
               
       ),
+      
+      tabItem(tabName = "download",
+              h2("Download Data"),
+              downloadButton("download_data", "Download Abiotic Stresses Data")
+      ),
+      
       
       tabItem(tabName = "log_in",  ##changed name here
               h2("Log in"),
@@ -233,6 +241,9 @@ ui <- dashboardPage(
 )
 
 # ... (Previous code)
+
+
+
 
 
 
