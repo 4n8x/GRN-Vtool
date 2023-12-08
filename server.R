@@ -17,7 +17,7 @@ server <- function(input, output, session) {
   fileUploaded <- reactive({
     uploaded = FALSE
     if (!is.null(input$data_file1)) {
-      file1 <- try(read.csv(input$data_file1$datapath,row.names='target_id'))
+      file1 <- try(read.csv(input$data_file1$datapath,row.names='target_id',fileEncoding="UTF-8-BOM"))
       if (!inherits(file1, "try-error") && nrow(file1) > 0) {
         uploaded = TRUE
       }
@@ -33,7 +33,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$data_file1, {
     if (!is.null(input$data_file1)) {
-      file1 <- try(read.csv(input$data_file1$datapath,row.names='target_id'))
+      file1 <- try(read.csv(input$data_file1$datapath,row.names='target_id',fileEncoding="UTF-8-BOM"))
       if (!inherits(file1, "try-error") && nrow(file1) > 0) {
         abiotic_data <<- file1  # Store data in global variable
         tcc_object <<- DIANE::normalize(abiotic_data, abiotic_stresses$conditions, 
