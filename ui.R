@@ -208,7 +208,7 @@ ui <- dashboardPage(
       
       tabItem(tabName = "download",
               h2("Download Data"),
-              downloadButton("download_data", "Download Abiotic Stresses Data")
+              downloadButton("download_data", "Download Normalization results Data")
       ),
       
       
@@ -243,11 +243,5 @@ ui <- dashboardPage(
 )
 
 # ... (Previous code)
-
-
-
-
-
-
 
 
