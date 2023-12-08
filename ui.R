@@ -188,7 +188,9 @@ ui <- dashboardPage(
               
               fluidRow(
                 column(6, uiOutput("diane_network_box")),
-                column(6, uiOutput("seqnet_network_box"))
+                column(6, uiOutput("seqnet_network_box")),
+                selectInput("nodeSelector", "Select by id", choices = NULL)
+                
               ),
               actionButton("generate_button", "Generate Network"),
               
@@ -241,6 +243,7 @@ ui <- dashboardPage(
 )
 
 # ... (Previous code)
+
 
 
 
