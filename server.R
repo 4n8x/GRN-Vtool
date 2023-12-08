@@ -12,10 +12,58 @@ server <- function(input, output, session) {
   
   # Initialize an empty igraph graph object
   g <- reactiveVal(NULL)
+  data("abiotic_stresses")
   
   fileUploaded <- reactive({
-    !is.null(input$data_file1) || !is.null(input$data_file2)
+    uploaded = FALSE
+    if (!is.null(input$data_file1)) {
+      file1 <- try(read.csv(input$data_file1$datapath,row.names='target_id'))
+      if (!inherits(file1, "try-error") && nrow(file1) > 0) {
+        uploaded = TRUE
+      }
+    }
+    if (!is.null(input$data_file2)) {
+      file2 <- try(read.csv(input$data_file2$datapath), silent = TRUE)
+      if (!inherits(file2, "try-error") && nrow(file2) > 0) {
+        uploaded = TRUE
+      }
+    }
+    uploaded
   })
+  
+  observeEvent(input$data_file1, {
+    if (!is.null(input$data_file1)) {
+      file1 <- try(read.csv(input$data_file1$datapath,row.names='target_id'))
+      if (!inherits(file1, "try-error") && nrow(file1) > 0) {
+        abiotic_data <<- file1  # Store data in global variable
+        tcc_object <<- DIANE::normalize(abiotic_data, abiotic_stresses$conditions, 
+                                        iteration = FALSE)
+      } else {
+        showModal(modalDialog(
+          title = "Warning",
+          "The first uploaded file is empty or invalid. Please upload a non-empty CSV file."
+        ))
+      }
+    }
+  })
+  
+  # Observe event for the second file input
+  observeEvent(input$data_file2, {
+    if (!is.null(input$data_file2)) {
+      file2 <- try(read.csv(input$data_file2$datapath), silent = TRUE,row.names='target_id')
+      if (!inherits(file2, "try-error") && nrow(file2) > 0) {
+        abiotic_data <<- file2  # Store data in global variable
+        tcc_object <<- DIANE::normalize(abiotic_data, abiotic_stresses$conditions, 
+                                        iteration = FALSE)
+      } else {
+        showModal(modalDialog(
+          title = "Warning",
+          "The second uploaded file is empty or invalid. Please upload a non-empty CSV file."
+        ))
+      }
+    }
+  })
+  
   
   # Create an output to enable conditional panels
   output$fileUploaded <- reactive({
@@ -31,7 +79,10 @@ server <- function(input, output, session) {
     content = function(file) {
       # Choose the part of abiotic_stresses you want to download. For example:
       # If you want to download 'raw_counts'
-      data_to_download <- abiotic_stresses$raw_counts
+      tcc_object <<- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
+      
+      normalized_counts <<- TCC::getNormalizedData(tcc_object)
+      data_to_download <- normalized_counts
       
       # Or, if you want to download 'normalized_counts'
       # data_to_download <- abiotic_stresses$normalized_counts
@@ -94,7 +145,7 @@ server <- function(input, output, session) {
   })
   
   output$seqnet_network_box <- renderUI({
-    print("SeqNet option selected")
+    
     if ("seqnet" %in% input$tool_choice) {
       if (input$num_files == "one") {
         box(
@@ -137,17 +188,20 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$norm_button, {
+    
     # Load the data directly from the SeqNet package
     if (fileUploaded()) {
-      print("norm")
-      data("abiotic_stresses")
-      tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
-                                     iteration = FALSE)
-      # Extract the normalized counts from the tcc_object
-      normalized_counts <- TCC::getNormalizedData(tcc_object)
+      if ("seqnet" %in% input$tool_choice){
+        print("norm")
+        
+        
+        # Extract the normalized counts from the tcc_object
+        normalized_counts <<- TCC::getNormalizedData(tcc_object)
+        
+        # Output the normalized data to a table in the UI
+        output$norm_plot<<-renderPlot({plot(tcc_object)})}
       
-      # Output the normalized data to a table in the UI
-      output$norm_plot<<-renderPlot({plot(tcc_object)})
+      
     }
     else{
       showModal(modalDialog(
@@ -160,19 +214,31 @@ server <- function(input, output, session) {
   observeEvent(input$de_button, {
     if (fileUploaded()) {
       if (input$num_files == "one"| input$num_files == "two") {
-        print("differential started")
-        # Load the data directly from the SeqNet package
-        data("abiotic_stresses")
-        tcc_object <- DIANE::normalize(abiotic_stresses$raw_counts, abiotic_stresses$conditions, 
-                                       iteration = FALSE)
-        tcc_object <- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
-        fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
-        print("fit done")
         
-        tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
-        print("tags done")
-        
-        output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})
+        if ("seqnet" %in% input$tool_choice){
+          print("differential started")
+          # Load the data directly from the SeqNet package
+          #@ data("abiotic_stresses")
+          
+          tcc_object <<- DIANE::filter_low_counts(tcc_object, 10*length(abiotic_stresses$conditions))
+          fit <- DIANE::estimateDispersion(tcc = tcc_object, conditions = abiotic_stresses$conditions)
+          print("fit done")
+          
+          tags <- DIANE::estimateDEGs(fit, reference = "C", perturbation = "H", p.value = 1)
+          print("tags done")
+          
+          output$de_plot<<-renderPlot({ DIANE::draw_DEGs(tags, fdr = 0.01, lfc = 1)})}
+        else if ("diane" %in% input$tool_choice) {
+          
+          
+          
+        }
+        else{
+          showModal(modalDialog(
+            title = "Warning",
+            "Please chose a method before generating Differential Expression."
+          ))
+        }
       }
       
     }
@@ -187,20 +253,37 @@ server <- function(input, output, session) {
     if (fileUploaded()) {
       print("clustering started")
       if (input$num_files == "one" | input$num_files == "two") {
-        data("abiotic_stresses")
-        genes <- abiotic_stresses$heat_DEGs
-        clustering <- run_coseq(conds = unique(abiotic_stresses$conditions), 
-                                data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
         
-        #> ****************************************
-        #> coseq analysis: Normal approach & arcsin transformation
-        #> K = 6 to 9 
-        #> Use seed argument in coseq for reproducible results.
-        #> ****************************************
-        
-        print("clustering done")
-        output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
-        
+        if ("seqnet" %in% input$tool_choice){
+          # data("abiotic_stresses")
+          genes <<- abiotic_stresses$heat_DEGs
+          clustering <<- run_coseq(conds = unique(abiotic_stresses$conditions), 
+                                   data = abiotic_stresses$normalized_counts, genes = genes, K = 6:9)
+          
+          #> ****************************************
+          #> coseq analysis: Normal approach & arcsin transformation
+          #> K = 6 to 9 
+          #> Use seed argument in coseq for reproducible results.
+          #> ****************************************
+          
+          print("clustering done")
+          output$ebc_plot<<-renderPlot({DIANE::draw_profiles(data =abiotic_stresses$normalized_counts, clustering$membership, conds = unique(abiotic_stresses$conditions), k = 3) })
+        }
+        else  if ("diane" %in% input$tool_choice) {
+          
+          
+          
+          
+          
+          
+          
+        }
+        else{
+          showModal(modalDialog(
+            title = "Warning",
+            "Please chose a method before generating Differential Expression."
+          ))
+        }
       }
       
     }
@@ -237,8 +320,9 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$generate_button, {
-    if ("diane" %in% input$tool_choice) {
+    if ("seqnet" %in% input$tool_choice) {
       if (fileUploaded()) {
+        
         
         data("abiotic_stresses")
         edges <- abiotic_stresses$heat_DEGs_regulatory_links 
@@ -248,22 +332,22 @@ server <- function(input, output, session) {
         row_names <- rownames(edges)
         
         # Print the row names
-        #print(row_names)
+        print(row_names)
         column_names <- colnames(edges)
         
         # Print the column names
-        #print(column_names)
+        print(column_names)
         common_genes <- intersect(row_names, column_names)
         
         edges <- edges[common_genes, common_genes]
         row_names2 <- rownames(edges)
         
         # Print the row names
-        #print(row_names2)
+        print(row_names2)
         column_names2 <- colnames(edges)
         
         # Print the column names
-        #print(column_names2)
+        print(column_names2)
         symmetric_edges <- pmax(edges, t(edges))
         
         threshold <- 0  # setting threshold
@@ -309,7 +393,22 @@ server <- function(input, output, session) {
         }
         
         edges_df_reactive(edges_df)
-        
+        observe({
+          # Assuming nodes_df has an 'id' column with the node ids
+          updateSelectInput(session, "nodeSelector",
+                            choices = nodes_df$id)
+        })
+        observeEvent(input$nodeSelector, {
+          print("here")
+          print(input$nodeSelector)
+          connected_nodes_node <- get_connected_nodes(input$nodeSelector, edges_df)
+          
+          showModal(modalDialog(
+            title = "Node Information",
+            paste("Clicked Node:", input$nodeSelector, 
+                  "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
+          ))
+        })
         observeEvent(input$interactive_graph_nodes, {
           if(!identical(input$interactive_graph_nodes$nodes, list())) {
             clicked_node <- input$interactive_graph_nodes$nodes[1]
@@ -323,7 +422,7 @@ server <- function(input, output, session) {
             ))
           }
         }, ignoreNULL = TRUE)
-        output$diane_network_plot <- renderVisNetwork({
+        output$seqnet_network_plot <- renderVisNetwork({
           visNetwork(nodes_df, edges_df, width = "100%", height = "8000px") %>%
             visIgraphLayout() %>%
             visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
@@ -332,7 +431,7 @@ server <- function(input, output, session) {
     Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
   }")
         })
-        # shinyjs::hide("generate_button")
+        shinyjs::hide("generate_button")
       }
       else{
         showModal(modalDialog(
@@ -344,7 +443,7 @@ server <- function(input, output, session) {
     else if ("seqnet" %in% input$tool_choice) {
       print("SeqNet network bein generated here")
       if (fileUploaded()) {
-        data("abiotic_stresses")
+        # data("abiotic_stresses")
         edges <- abiotic_stresses$heat_DEGs_regulatory_links 
         # Get the row names of the matrix 'edges'
         edges <- edges[-(19:25), ]
