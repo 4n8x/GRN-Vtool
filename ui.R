@@ -102,18 +102,12 @@ ui <- dashboardPage(
       tabItem(tabName = "upload_data",
               h2("Upload Data"),
               p("Upload your data files here:"),
+              tags$p("For the second file uploaded, we assume it has already went through the pipeline of processing, and it should be ready for network generation.", style="color:#FF0000"),
               radioButtons("num_files", label = "Number of Files:",
                            choices = list("One File" = "one", "Two Files" = "two"), 
                            selected = "one"),
-              conditionalPanel(
-                condition = "input.num_files == 'one'",
-                fileInput("data_file1", "Upload Data File", accept = c(".csv"))
-              ),
-              conditionalPanel(
-                condition = "input.num_files == 'two'",
-                fileInput("data_file1", "Upload Data File 1", accept = c(".csv")),
-                fileInput("data_file2", "Upload Data File 2", accept = c(".csv"))
-              )
+              fileInput("data_file1", "Upload Data File 1", accept = c(".csv")),
+              hidden(fileInput("data_file2", "Upload Data File 2", accept = c(".csv")))
       )
       ,
       
@@ -208,7 +202,7 @@ ui <- dashboardPage(
       
       tabItem(tabName = "download",
               h2("Download Data"),
-              downloadButton("download_data", "Download Normalization Data")
+              actionButton("download_data", "Download Results")
       ),
       
       
