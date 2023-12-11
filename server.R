@@ -417,6 +417,99 @@ server <- function(input, output, session) {
   
   
   
+  observeEvent(input$generate_button, {
+    if ("diane" %in% input$tool_choice){
+     if (is.null(input$tool_choice)) {
+      showModal(modalDialog(
+        title = "Tool Selection Required",
+        "Please select a network generation tool from the Tools menu."
+      ))
+    }
+    else{
+      if (fileUploaded()) {
+        can_download4(TRUE)
+        highlight_gene <- function(gene_name, network_data) {
+          # Check if the gene is present in the network
+          selected_genes <- network_data$nodes$label[network_data$nodes$label == gene_name]
+          
+          if (length(selected_genes) > 0) {
+            # Mark the gene as highlighted in the nodes data
+            network_data$nodes$highlight <- ifelse(network_data$nodes$label %in% selected_genes, "highlighted", "not-highlighted")
+            
+            # Draw the network with highlighted gene
+            visNetwork::visNetwork(
+              nodes = network_data$nodes,
+              edges = network_data$edges,
+              main = "Network with Highlighted Gene",
+              
+            ) %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE),
+                         nodesIdSelection = TRUE) %>%
+              visEvents(click = "function(nodes) {
+                  if (nodes.nodes.length > 0) {
+                    Shiny.setInputValue('selected_gene', nodes.nodes[0]);
+                  }
+                }")
+            
+            # Print the names of highlighted genes
+            print(paste("Highlighted genes:", paste(selected_genes, collapse = ", ")))
+          } else {
+            print(paste("Gene", gene_name, "not found in the network."))
+          }
+        }
+        
+        # Reactive values to store the network data
+        network_data <- reactiveVal(data)
+        
+        # Highlight gene function
+        highlight_gene <- function(gene_name, network_data) {
+          # Check if the gene is present in the network
+          selected_genes <- network_data$nodes$label[network_data$nodes$label == gene_name]
+          
+          if (length(selected_genes) > 0) {
+            # Mark the gene as highlighted in the nodes data
+            network_data$nodes$highlight <- ifelse(network_data$nodes$label %in% selected_genes, "highlighted", "not-highlighted")
+            
+            # Update the reactive value with the modified network data
+            network_data(network_data())
+          } else {
+            print(paste("Gene", gene_name, "not found in the network."))
+          }
+        }
+        
+        # React to the highlight_button click event
+        observeEvent(input$highlight_button, {
+          highlight_gene(input$gene_name, network_data())
+        })
+        
+        # Render the network plot
+        output$network_plot <- renderVisNetwork({
+          visNetwork(
+            nodes = network_data()$nodes,
+            edges = network_data()$edges,
+            main = "Diane network",
+            width = "100%",
+            height = "100%"
+          ) %>%
+            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE),
+                       nodesIdSelection = TRUE) %>%
+            visEvents(click = "function(nodes) {
+                  if (nodes.nodes.length > 0) {
+                    Shiny.setInputValue('selected_gene', nodes.nodes[0]);
+                  }
+                }")
+        })
+        
+        
+        
+      
+  
+  
+ 
+    }
+    }
+  }
+})
   #end of diane 
   
   
