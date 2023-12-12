@@ -10,9 +10,12 @@ https://grnvtool.shinyapps.io/grn-vtool/
 - Making the Search process easier were it will help the biologist to navigate in a large network.
 - Partial network extraction will aid them in productive analysis. 
 
-### Technology used
-#### In GRN-Vtool we chose to use DIANE as the first tool to infer GRN from gene expression data. 
-DIANE is an R package, is a simple exploratory visualization, that allows the user to observe the normalized expression levels of several genes of interest. DIANE enables gene expression profile clustering using the statistical framework for inferring mixture models through an Expectation-Maximization (EM) algorithm. In DIANE, the package chosen for GRN reconstruction is GENIE3, a machine-learning procedure among the best DREAM challenges performers. GENIE3 uses Random Forests[1], which is a machine-learning method based on the inference of a collection of regression trees. It has the advantage of being a non-parametric procedure, requiring very few modeling or biological priors while being able to capture interactions and high-order combinatorics between regulators. 
+
+The field of Gene Regulatory Network (GRN) construction plays a pivotal role in unraveling cellular processes and gene pathways. However, conducting GRN analytical studies has posed significant challenges for biologists. Technical expertise is often required for tool installation and configuration, while the reliance on programming command lines hampers flexibility in adjusting tool parameters. Moreover, the absence of a standardized format for visualizing GRNs across different tools complicates comparative analysis. 
+
+GRN VTOOLS is a web-based platform that offers pre-installed GRN visualization tools, including DIANE and SeqNet, which enable researchers to overcome technical hurdles. We chose to implement DIANE  and SeqNet as they use GENIE3 and GeneNetWeaver, SynTReN, and Rogers for GRN inferenc. GENIE3 is a random forest ensemble machine learning procedure that was among the best performers of the DREAM challenges. GRN VTOOLS presents results from the inference methods in an interactive dashboard with a unified interface.  A notable feature of GRN VTOOL is its capability to facilitate the comparison of two GRNs in one session. These GRNs could result from different inference methods or resulted from using one inference tool on different datasets.
+
+This is helpful for biologists, particularly in patient scenarios, where they can conveniently analyze GRNs before and after treatments or interventions thus eliminating the need for manual comparison. GRN VTOOL empowers biologists to efficiently conduct comparative analyses, gain deeper insights into regulatory dynamics, and accelerate their research, particularly in patient-focused studies. 
 
  
 
