@@ -23,13 +23,19 @@ DIANE is an R package, is a simple exploratory visualization, that allows the us
 
 #### You can use Two tools on the Website to generate your network [SeqNet](https://github.com/tgrimes/SeqNet),[DIANE](https://github.com/OceaneCsn/DIANE).
 
+#### Datasets usage and preprocessing:
+- Dataset used is 	"Molecular plant responses to combined abiotic stresses put a spotlight on unknown and abundant genes", which was done in expression profiling by high throughput sequencing. Our project mainly utilizes Arabidopsis thaliana organism, hence this dataset is compatible with our pipeline.[]
+  
+- You can download the datasets that are valid for usage in our website from the [link](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE146206).
+
+The dataset needs to be preprocessed by removing all columns except those under raw counts from kallisto, including "target_id" column.
 
 ### Launching instructions
 You can use GRN-Vtool by entering the website and following the steps:
-- Register an account in our wesbite to login.
-- Upload your Dataset from Data Tab > Upload Data.
-- Perform Normalization, Differential Expression, Clustering if needed.
-- Generate the network from Generate Network Tab after choosing a tool (SeqNet or DIANE).
-- You can download the results to your local machine as csv format.
+- Register an account in our wesbite to login, this account can be used to login to our website later.
+- Upload your Dataset from Data Tab > Upload Data, you can upload up to 2 datasets.
+- Perform Normalization, Differential Expression, Clustering if needed, the 2nd file uploaded will be assumed to have those already done to the dataset.
+- Generate the network from Generate Network Tab after choosing a tool (SeqNet or DIANE, or both).
+- You can download the results to your local machine as csv format, you can only download the results after performing the entire pipeline for processing.
 
  
