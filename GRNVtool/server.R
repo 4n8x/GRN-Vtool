@@ -114,7 +114,7 @@ server <- function(input, output, session) {
     # all_conditions_met <- can_download1() && can_download2() && can_download3() && can_download4()
     #   print(all_conditions_met)
     data_to_download <- edges2
-    file_path <- file.path(getwd(), "data.csv")
+    file_path <- file.path(getwd(), "nodes.csv")
     write.csv(data_to_download, file_path, row.names = FALSE)
     
   })
@@ -445,7 +445,7 @@ server <- function(input, output, session) {
     }
     else if  ("seqnet" %in% input$tool_choice){
       if (fileUploaded()) {
-        
+        can_download4(TRUE)
         if (input$num_files == "one" ){
           can_download4(TRUE)
           # Reset the flags at the beginning
@@ -668,7 +668,7 @@ server <- function(input, output, session) {
             
           })
           shinyjs::hide("generate_button")
-          shinyjs::hide("change_color")
+          
         }
         
       }
@@ -876,92 +876,203 @@ server <- function(input, output, session) {
   
   observeEvent(input$change_color, {
     if ("seqnet" %in% input$tool_choice) {
-      if (!is.null(nodes_df_reactive())) {
-        print("hiding the button")
-        shinyjs::hide("change_color")
-        shinyjs::show("revert_color")
-        updated_nodes_df <- nodes_df_reactive()
-        updated_nodes_df$color <- "blue"
-        nodes_df_reactive(updated_nodes_df)
-        get_connected_nodes <- function(clicked_node, edges_df_closure) {
-          # Call the closure to get the dataframe
-          edges_df <- edges_df_closure()
-          
-          # Ensure edges_df is a dataframe
-          if (!is.data.frame(edges_df)) {
-            stop("The object returned by edges_df_closure is not a dataframe")
+      if (input$num_files == "one"){
+        if (!is.null(nodes_df_reactive())) {
+          print("hiding the button")
+          shinyjs::hide("change_color")
+          shinyjs::show("revert_color")
+          updated_nodes_df <- nodes_df_reactive()
+          updated_nodes_df$color <- "blue"
+          nodes_df_reactive(updated_nodes_df)
+          get_connected_nodes <- function(clicked_node, edges_df_closure) {
+            # Call the closure to get the dataframe
+            edges_df <- edges_df_closure()
+            
+            # Ensure edges_df is a dataframe
+            if (!is.data.frame(edges_df)) {
+              stop("The object returned by edges_df_closure is not a dataframe")
+            }
+            
+            # Find rows in edges_df where the clicked node is either 'from' or 'to'
+            connected <- subset(edges_df, edges_df$from == clicked_node | edges_df$to == clicked_node)
+            
+            # Print edges_df for debugging
+            # print(edges_df)
+            
+            # Define your data array
+            data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+            
+            # Return the data array
+            unique(c(connected$from, connected$to))
+            
+            
           }
           
-          # Find rows in edges_df where the clicked node is either 'from' or 'to'
-          connected <- subset(edges_df, edges_df$from == clicked_node | edges_df$to == clicked_node)
-          
-          # Print edges_df for debugging
-          # print(edges_df)
-          
-          # Define your data array
-          data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-          
-          # Return the data array
-          unique(c(connected$from, connected$to))
           
           
-        }
-        
-        
-        
-        
-        observeEvent(input$interactive_graph_nodes, {
-          if(!identical(input$interactive_graph_nodes$nodes, list())) {
-            clicked_node <- input$interactive_graph_nodes$nodes[1]
-            
-            connected_nodes_node <- get_connected_nodes(clicked_node, edges_df_reactive)
-            
-            showModal(modalDialog(
-              title = "Node Information",
-              paste("Clicked Node:", clicked_node, 
-                    "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
-            ))
-          }
-        }, ignoreNULL = TRUE)
-        
-        output$seqnet_network_plot <- renderVisNetwork({
-          visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
-            visIgraphLayout() %>%
-            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
-            visInteraction(dragNodes = TRUE) %>%
-            visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-            
-            visEvents(click = "function(nodes){
+          
+          observeEvent(input$interactive_graph_nodes, {
+            if(!identical(input$interactive_graph_nodes$nodes, list())) {
+              clicked_node <- input$interactive_graph_nodes$nodes[1]
+              
+              connected_nodes_node <- get_connected_nodes(clicked_node, edges_df_reactive)
+              
+              showModal(modalDialog(
+                title = "Node Information",
+                paste("Clicked Node:", clicked_node, 
+                      "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
+              ))
+            }
+          }, ignoreNULL = TRUE)
+          
+          output$seqnet_network_plot <- renderVisNetwork({
+            visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+              
+              visEvents(click = "function(nodes){
     Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
   }")
-          
-        })
+            
+          })
+        }
       }
-      
+      else if (input$num_files == "two"){
+        if (!is.null(nodes_df_reactive())) {
+          print("hiding the button")
+          shinyjs::hide("change_color")
+          shinyjs::show("revert_color")
+          updated_nodes_df <- nodes_df_reactive()
+          updated_nodes_df$color <- "blue"
+          nodes_df_reactive(updated_nodes_df)
+          get_connected_nodes <- function(clicked_node, edges_df_closure) {
+            # Call the closure to get the dataframe
+            edges_df <- edges_df_closure()
+            
+            # Ensure edges_df is a dataframe
+            if (!is.data.frame(edges_df)) {
+              stop("The object returned by edges_df_closure is not a dataframe")
+            }
+            
+            # Find rows in edges_df where the clicked node is either 'from' or 'to'
+            connected <- subset(edges_df, edges_df$from == clicked_node | edges_df$to == clicked_node)
+            
+            # Print edges_df for debugging
+            # print(edges_df)
+            
+            # Define your data array
+            data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+            
+            # Return the data array
+            unique(c(connected$from, connected$to))
+            
+            
+          }
+          
+          
+          
+          
+          observeEvent(input$interactive_graph_nodes, {
+            if(!identical(input$interactive_graph_nodes$nodes, list())) {
+              clicked_node <- input$interactive_graph_nodes$nodes[1]
+              
+              connected_nodes_node <- get_connected_nodes(clicked_node, edges_df_reactive)
+              
+              showModal(modalDialog(
+                title = "Node Information",
+                paste("Clicked Node:", clicked_node, 
+                      "\nConnected Nodes:", paste(connected_nodes_node, collapse = ", "))
+              ))
+            }
+          }, ignoreNULL = TRUE)
+          
+          output$seqnet_network_plot_2 <- renderVisNetwork({
+            visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+              
+              visEvents(click = "function(nodes){
+    Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+  }")
+            
+          })
+          output$seqnet_network_plot_1 <- renderVisNetwork({
+            visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+              
+              visEvents(click = "function(nodes){
+    Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+  }")
+            
+          })
+        }
+      }
     }
   })
   
   observeEvent(input$revert_color, {
     if ("seqnet" %in% input$tool_choice) {
-      if (!is.null(nodes_df_reactive())) {
-        updated_nodes_df <- nodes_df_reactive()
-        updated_nodes_df$color <- "orange"  # Revert color to orange
-        nodes_df_reactive(updated_nodes_df)
-        shinyjs::show("change_color")
-        shinyjs::hide("revert_color")
-        
-        # Update the network plot
-        output$seqnet_network_plot <- renderVisNetwork({
-          visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
-            visIgraphLayout() %>%
-            visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
-            visInteraction(dragNodes = TRUE) %>%
-            visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-            
-            visEvents(click = "function(nodes){
+      if (input$num_files == "one"){
+        if (!is.null(nodes_df_reactive())) {
+          updated_nodes_df <- nodes_df_reactive()
+          updated_nodes_df$color <- "orange"  # Revert color to orange
+          nodes_df_reactive(updated_nodes_df)
+          shinyjs::show("change_color")
+          shinyjs::hide("revert_color")
+          
+          # Update the network plot
+          output$seqnet_network_plot <- renderVisNetwork({
+            visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+              
+              visEvents(click = "function(nodes){
             Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
           }")
-        })
+          })
+        }
+      }
+      else if (input$num_files == "two"){
+        if (!is.null(nodes_df_reactive())) {
+          updated_nodes_df <- nodes_df_reactive()
+          updated_nodes_df$color <- "orange"  # Revert color to orange
+          nodes_df_reactive(updated_nodes_df)
+          shinyjs::show("change_color")
+          shinyjs::hide("revert_color")
+          
+          # Update the network plot
+          output$seqnet_network_plot_1 <- renderVisNetwork({
+            visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+              
+              visEvents(click = "function(nodes){
+            Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+          }")
+          })
+          output$seqnet_network_plot_2 <- renderVisNetwork({
+            visNetwork(nodes_df_reactive(), edges_df_reactive(), width = "100%", height = "8000px") %>%
+              visIgraphLayout() %>%
+              visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE)) %>%
+              visInteraction(dragNodes = TRUE) %>%
+              visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+              
+              visEvents(click = "function(nodes){
+            Shiny.setInputValue('interactive_graph_nodes', nodes, {priority: 'event'});
+          }")
+          })
+        }
       }
     }
   })
