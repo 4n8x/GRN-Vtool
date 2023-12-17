@@ -1,4 +1,3 @@
-#
 # This is the server logic of a Shiny web application. You can run the
 # application by clicking 'Run App' above.
 #
@@ -1079,27 +1078,38 @@ server <- function(input, output, session) {
   
   
   
-  observeEvent(input$get_sigma_button, {
-    if ("seqnet" %in% input$tool_choice) {
-      g_copy <- g()
-      if (!is.null(g_copy)) {
-        # Calculate partial correlations for the network
-        nw <- gen_partial_correlations(g_copy)
-        sigma_network <- get_sigma(nw)
-        
-        # Display the covariance matrix in a modal dialog
-        showModal(
-          modalDialog(
-            title = "Covariance Matrix for Network",
-            tableOutput("sigma_network_table")
-          )
-        )
-        
-        output$sigma_network_table <- renderTable({
-          sigma_network
-        })
-      }
-    }
+  network_density <- reactiveVal(0)
+  
+  # When the density button pressed The network density gives a quick overview of how connected the network is 
+  observeEvent(input$showDensity, {
+    
+    # Calculate network density
+    g <- graph_from_data_frame(edges_df(), directed = FALSE)
+    density_val <- graph.density(g)
+    network_density(density_val)
+  })
+  
+  # Display network density when the button is clicked
+  output$networkDensity <- renderText({
+    input$showDensity
+    paste("Network Density:", network_density())
+  })
+  
+  average_degree <- reactiveVal(0)
+  
+  observeEvent(input$showAvgDegree, {
+    
+    # Calculate the average degree after generating the network The average degree is a measure of the average number of connections per node in your network
+    g <- igraph::graph_from_data_frame(edges_df(), directed = FALSE)
+    degree_vals <- igraph::degree(g)
+    avg_degree <- mean(degree_vals)
+    average_degree(avg_degree)  # Store the average degree
+  })
+  
+  # Display the average degree when the 'Show Average Node Degree' button is clicked
+  output$averageNodeDegree <- renderText({
+    req(input$showAvgDegree)  # This ensures the calculation is done only after the button is clicked
+    paste("Average Node Degree:", average_degree())
   })
   observeEvent(input$download_data, {
     
