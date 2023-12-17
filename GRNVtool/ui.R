@@ -1,4 +1,3 @@
-#
 # This is the user-interface definition of a Shiny web application. You can
 # run the application by clicking 'Run App' above.
 #
@@ -202,9 +201,15 @@ ui <- dashboardPage(
               
               conditionalPanel(
                 "input.tool_choice.includes('seqnet')",
-                actionButton("get_sigma_button", "Get Sigma"),  # Add the Get Sigma button
+                
                 actionButton("change_color", "Change Color"),  # Add the Change Color button here
-                actionButton("revert_color", "Revert Color", class = "btn-primary", style = "display: none;")
+                actionButton("revert_color", "Revert Color", class = "btn-primary", style = "display: none;"),
+                actionButton("showDensity", "Show Network Density"),
+                
+                # Text output for displaying network density
+                textOutput("networkDensity"),
+                actionButton("showAvgDegree", "Show Average Node Degree"),
+                textOutput("averageNodeDegree")
               )
               
               
@@ -252,7 +257,3 @@ ui <- dashboardPage(
       ))
   )
 )
-
-# ... (Previous code)
-
-
