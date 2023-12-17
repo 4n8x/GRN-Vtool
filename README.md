@@ -60,10 +60,5 @@ User can also downloads the GRN analysis processes he made, for GRN plotting onl
 The dataset needs to be preprocessed by removing all columns except those under raw counts from kallisto, you can use a preprocessed dataset from Datasets folder.
 
 #### Launching instructions
-You can use GRN-Vtool by entering the website and following the steps:
-- Register an account in our wesbite to login, this account can be used to login to our website later.
-- Upload your Dataset from Data Tab > Upload Data, you can upload up to 2 datasets.
-- Perform Normalization, Differential Expression, Clustering if needed.
-- Generate the network from Generate Network Tab after choosing a tool (SeqNet or DIANE, or both).
-- You can download the results to your local machine as csv format, you can only download the results that were performed.
+You can use GRN-Vtool by entering the website link and registering an account in our wesbite to login, this account can be used to login to our website later.
 
