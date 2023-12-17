@@ -37,5 +37,3 @@ You can use GRN-Vtool by entering the website and following the steps:
 - Generate the network from Generate Network Tab after choosing a tool (SeqNet or DIANE, or both).
 - You can download the results to your local machine as csv format, you can only download the results that were performed.
 
-
- #### References
