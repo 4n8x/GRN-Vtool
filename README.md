@@ -22,6 +22,36 @@ This is helpful for biologists, particularly in patient scenarios, where they ca
 
 ![GRNs Comparative Analysis](https://drive.google.com/uc?id=1a9lw88b5vZdin-HovQAl_mjefZOGkf7F)
 
+
+User can also do preprocessings for the uploaded dataset such as normalization, differential expresion and clustering:
+
+![Normalize](https://drive.google.com/uc?id=1s0ZgzGLLu-7DrPS7hcwdCJIDIQZK-pWn)
+
+
+![Differential Expression](https://drive.google.com/uc?id=184hfaowqnTBcspPIYIsx_GQNHbYmwzeD)
+
+
+![Clustering](https://drive.google.com/uc?id=1Nt7I2xqUXbU_25Uptn0pT9cnDxxUdcbr)
+
+
+
+User can also view 2 datasets GRN analysis results as follow:
+
+![Normalize2](https://drive.google.com/uc?id=1WEW2zgVwf-zP0fSeZIz5VmUdc1fH76OB)
+
+![Differential Expression2](https://drive.google.com/uc?id=1t3hra2QbPzWjIPuRfli-BoKS0FZKE9kI)
+
+![Clustering2](https://drive.google.com/uc?id=1qVwrNSPagkI9jRnSmpeOWmDZTOLiCULz)
+
+
+![DIANE2](https://drive.google.com/uc?id=1m29I7ce_2stfQYcDFo6EWeRmjWb_i85n)
+
+
+![SeqNet2](https://drive.google.com/uc?id=1Mh_2os19ip5SQGGDumVumBpl-j7PLHS4)
+
+User can also downloads the GRN analysis processes he made, for GRN plotting only SeqNet results get downloaded:
+
+![Download](https://drive.google.com/uc?id=1VpJ1MLguWj84H1yN78fyMOfcmJAGtjz8)
 #### Datasets usage and preprocessing:
 - Dataset used is 	"Molecular plant responses to combined abiotic stresses put a spotlight on unknown and abundant genes", which was done in expression profiling by high throughput sequencing. Our project mainly utilizes [Arabidopsis thaliana organism](https://bio.libretexts.org/Bookshelves/Introductory_and_General_Biology/Biology_(Kimball)/19%3A_The_Diversity_of_Life/19.01%3A_Eukaryotic_Life/19.1.06%3A_Arabidopsis_Thaliana_-_A_Model_Organism), hence this dataset is compatible with our pipeline.
   
