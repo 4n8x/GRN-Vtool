@@ -1,3 +1,5 @@
+#
+#
 # This is the server logic of a Shiny web application. You can run the
 # application by clicking 'Run App' above.
 #
@@ -1078,6 +1080,31 @@ server <- function(input, output, session) {
   
   
   
+  nodes_df <- reactive({
+    data.frame(id = 1:10,
+               label = paste("Label", 1:10),
+               color = rep("orange", 10),
+               shape = rep("circle", 10))
+  })
+  
+  # Example reactive dataset for edges, replace with your actual code to generate edges dataframe
+  edges_df <- reactive({
+    data.frame(from = sample(1:10, 10, replace = TRUE),
+               to = sample(1:10, 10, replace = TRUE))
+  })
+  
+  # Example observer for changing node color intensity
+  observeEvent(input$nodeColorIntensity, {
+    updated_nodes <- nodes_df() # Get the current nodes data
+    updated_nodes$color <- adjustcolor(updated_nodes$color, alpha.f = input$nodeColorIntensity)
+    
+    output$seqnet_network_plot <- renderVisNetwork({
+      visNetwork(updated_nodes, edges_df()) %>%
+        visIgraphLayout() %>%
+        visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE)
+    })
+  })
+  
   network_density <- reactiveVal(0)
   
   # When the density button pressed The network density gives a quick overview of how connected the network is 
@@ -1111,9 +1138,8 @@ server <- function(input, output, session) {
     req(input$showAvgDegree)  # This ensures the calculation is done only after the button is clicked
     paste("Average Node Degree:", average_degree())
   })
-  observeEvent(input$download_data, {
-    
-  })
+  
+  # ... (rest of your server logic)
   observeEvent(input$tabs, {
     if (input$tabs == "download") {
       print(input$tool_choice)
