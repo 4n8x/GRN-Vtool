@@ -1087,7 +1087,7 @@ server <- function(input, output, session) {
                shape = rep("circle", 10))
   })
   
-  # Example reactive dataset for edges, replace with your actual code to generate edges dataframe
+  #reactive dataset for edges
   edges_df <- reactive({
     data.frame(from = sample(1:10, 10, replace = TRUE),
                to = sample(1:10, 10, replace = TRUE))
